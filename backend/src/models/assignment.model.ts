@@ -1,6 +1,27 @@
 import mongoose, { Schema } from "mongoose";
 import Subject from "./subject.model.js";
 
+const questionBreakdownSchema = new Schema(
+    {
+        type: {
+            type: String,
+            required: true,
+            trim: true,
+        },
+        count: {
+            type: Number,
+            required: true,
+            min: 1,
+        },
+        marksPerQuestion: {
+            type: Number,
+            required: true,
+            min: 0,
+        },
+    },
+    { _id: false },
+);
+
 const assignmentSchema = new Schema(
     {
         title: {
@@ -19,12 +40,16 @@ const assignmentSchema = new Schema(
             required: true,
         },
         gradeLevel: { type: String, required: true, trim: true },
+        schoolName: { type: String, default: undefined, trim: true },
         dueDate: { type: Date, required: true },
-        questionTypes: {
-            type: [String],
+        questionBreakdown: {
+            type: [questionBreakdownSchema],
             required: true,
             validate: {
-                validator: async function (this: any, value: string[]) {
+                validator: async function (
+                    this: any,
+                    value: { type: string }[],
+                ) {
                     if (!this.subjectId) {
                         return false;
                     }
@@ -37,12 +62,18 @@ const assignmentSchema = new Schema(
                         return false;
                     }
 
-                    return value.every((type) =>
+                    const selectedTypes = value.map((item) => item.type);
+                    const uniqueTypes = new Set(selectedTypes);
+                    if (uniqueTypes.size !== selectedTypes.length) {
+                        return false;
+                    }
+
+                    return selectedTypes.every((type) =>
                         subject.questionTypes.includes(type),
                     );
                 },
                 message:
-                    "questionTypes contains values not allowed for selected subject.",
+                    "questionBreakdown contains values not allowed for selected subject.",
             },
         },
         totalQuestions: { type: Number, required: true, min: 1 },
@@ -82,6 +113,20 @@ const assignmentSchema = new Schema(
     },
     { timestamps: true },
 );
+
+assignmentSchema.pre("validate", function () {
+    if (this.questionBreakdown?.length) {
+        this.totalQuestions = this.questionBreakdown.reduce(
+            (sum: number, item: { count: number }) => sum + item.count,
+            0,
+        );
+        this.totalMarks = this.questionBreakdown.reduce(
+            (sum: number, item: { count: number; marksPerQuestion: number }) =>
+                sum + item.count * item.marksPerQuestion,
+            0,
+        );
+    }
+});
 
 const Assignment = mongoose.model("Assignment", assignmentSchema);
 

@@ -18,15 +18,28 @@ export const assignmentSchema = z.object({
     title: z.string().trim().min(1, "Title is required"),
     subjectId: objectIdSchema,
     gradeLevel: z.string().trim().min(1, "Grade level is required"),
+    schoolName: z.string().trim().min(1).optional(),
     dueDate: z.coerce.date(),
-    questionTypes: z
-        .array(z.string().trim().min(1))
+    questionBreakdown: z
+        .array(
+            z.object({
+                type: z.string().trim().min(1, "Question type is required"),
+                count: z
+                    .number()
+                    .int()
+                    .min(1, "Question count must be at least 1"),
+                marksPerQuestion: z
+                    .number()
+                    .min(0, "Marks per question must be 0 or more"),
+            }),
+        )
         .min(1, "At least one question type is required"),
     totalQuestions: z
         .number()
         .int()
-        .min(1, "Total questions must be at least 1"),
-    totalMarks: z.number().min(0, "Total marks must be 0 or more"),
+        .min(1, "Total questions must be at least 1")
+        .optional(),
+    totalMarks: z.number().min(0, "Total marks must be 0 or more").optional(),
     difficulty: z.enum(["easy", "medium", "hard", "mixed"]),
     additionalInstructions: z.string().trim().optional(),
     fileUrl: z.string().optional(),

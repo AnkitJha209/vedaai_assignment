@@ -4,6 +4,7 @@ import {
     assignmentQueueConnection,
     emailQueueName,
 } from "../queues/assignment.queue.js";
+import { sendAssignmentReadyEmail } from "../utils/emailFn.js";
 
 dotenv.config();
 
@@ -11,13 +12,17 @@ const startWorker = () => {
     const worker = new Worker(
         emailQueueName,
         async (job) => {
-            const { to, subject, text } = job.data || {};
-            if (!to || !subject || !text) {
-                throw new Error("to, subject, and text are required");
+            const { to, assignmentTitle, pdfUrl, userName } = job.data || {};
+            if (!to || !assignmentTitle || !pdfUrl) {
+                throw new Error("to, assignmentTitle, and pdfUrl are required");
             }
 
-            // Placeholder for real email integration.
-            console.log("Sending email", { to, subject, text });
+            await sendAssignmentReadyEmail({
+                to,
+                assignmentTitle,
+                pdfUrl,
+                userName,
+            });
         },
         { connection: assignmentQueueConnection },
     );
