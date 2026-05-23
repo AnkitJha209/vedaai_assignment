@@ -1,17 +1,23 @@
-import { Queue } from "bullmq";
+import { createNodeRedisClient, Queue } from "bullmq";
 import dotenv from "dotenv";
+import { createClient } from 'redis';
 
 dotenv.config();
 
 export const assignmentQueueName = "assignment";
+export const emailQueueName = "email";
 
-export const assignmentQueueConnection = {
-    host: process.env.REDIS_HOST || "127.0.0.1",
-    port: Number(process.env.REDIS_PORT || 6379),
-    username: process.env.REDIS_USERNAME || undefined,
-    password: process.env.REDIS_PASSWORD || undefined,
-};
+const rawClient = createClient({
+  url: process.env.REDIS_URL || "redis://localhost:6379",
+});
+
+
+export const assignmentQueueConnection = createNodeRedisClient(rawClient as any);
 
 export const assignmentQueue = new Queue(assignmentQueueName, {
+    connection: assignmentQueueConnection,
+});
+
+export const emailQueue = new Queue(emailQueueName, {
     connection: assignmentQueueConnection,
 });

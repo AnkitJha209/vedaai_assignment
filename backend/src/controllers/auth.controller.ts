@@ -108,6 +108,7 @@ export const signin = async (req: Request, res: Response) => {
                     firstName: user.firstName,
                     lastName: user.lastName,
                     email: user.email,
+                    token: token
                 },
             });
     } catch (error) {

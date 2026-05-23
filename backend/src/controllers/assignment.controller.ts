@@ -34,6 +34,8 @@ export const createAssignment = async (req: Request, res: Response) => {
 
         const assignment = await Assignment.create(assignmentPayload);
 
+        console.log("Assignment created with ID", { assignmentId: assignment._id });
+
         const job = await assignmentQueue.add(
             "generate-assignment",
             { assignmentId: assignment._id },
@@ -42,6 +44,8 @@ export const createAssignment = async (req: Request, res: Response) => {
                 removeOnFail: false,
             },
         );
+
+        console.log("Job added to queue", { jobId: job.id, assignmentId: assignment._id });
 
         await Assignment.findByIdAndUpdate(assignment._id, {
             jobId: job.id,
