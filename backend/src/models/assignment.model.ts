@@ -58,7 +58,7 @@ const assignmentSchema = new Schema(
         },
         additionalInstructions: {
             type: String,
-            default: "",
+            default: undefined,
             trim: true,
         },
         fileUrl: {
@@ -77,7 +77,7 @@ const assignmentSchema = new Schema(
         },
         jobId: {
             type: String,
-            required: true,
+            default: undefined,
         },
     },
     { timestamps: true },
