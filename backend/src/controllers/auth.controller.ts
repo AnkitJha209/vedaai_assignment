@@ -8,7 +8,6 @@ import { signInSchema, signUpSchema } from "../validation/validateSchema.js";
 dotenv.config();
 
 const jwtSecret = process.env.JWT_SECRET || "SECRET";
-    
 
 export const signup = async (req: Request, res: Response) => {
     try {
@@ -92,7 +91,9 @@ export const signin = async (req: Request, res: Response) => {
             return;
         }
 
-        const token = jwt.sign({ id: user.id }, jwtSecret, { expiresIn: "30d" });
+        const token = jwt.sign({ id: user.id }, jwtSecret, {
+            expiresIn: "30d",
+        });
 
         res.status(200)
             .cookie("token", token, {
@@ -108,7 +109,7 @@ export const signin = async (req: Request, res: Response) => {
                     firstName: user.firstName,
                     lastName: user.lastName,
                     email: user.email,
-                    token: token
+                    token: token,
                 },
             });
     } catch (error) {
@@ -118,4 +119,36 @@ export const signin = async (req: Request, res: Response) => {
             message: "Internal server error",
         });
     }
+};
+
+export const getMe = async (req: Request, res: Response) => {
+    try {
+        const userId = (req as any).user?.id;
+        if (!userId) {
+            res.status(401).json({ success: false, message: "Unauthorized" });
+            return;
+        }
+
+        const user = await User.findById(userId)
+            .select("firstName lastName email")
+            .lean();
+
+        if (!user) {
+            res.status(404).json({ success: false, message: "User not found" });
+            return;
+        }
+
+        res.status(200).json({ success: true, data: user });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({
+            success: false,
+            message: "Internal server error",
+        });
+    }
+};
+
+export const logout = async (_req: Request, res: Response) => {
+    res.clearCookie("token", { httpOnly: true, sameSite: "lax" });
+    res.status(200).json({ success: true, message: "Logged out" });
 };

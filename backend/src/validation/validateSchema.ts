@@ -45,3 +45,9 @@ export const assignmentSchema = z.object({
     fileUrl: z.string().optional(),
     fileText: z.string().optional(),
 });
+
+
+export const createSubjectSchema = z.object({
+    name: z.string().trim().min(1, "Subject name is required"),
+    questionTypes: z.array(z.string().trim().min(1, "Question type cannot be empty")).min(1, "At least one question type is required"),
+});
