@@ -180,6 +180,8 @@ const startWorker = async () => {
                 ).select("email firstName lastName");
 
                 if (user?.email) {
+                    const requestSummary = `Request: ${subject.name} · Grade ${assignment.gradeLevel} · ${assignment.totalMarks} marks · ${assignment.totalQuestions} questions`;
+                    console.log("Queueing email with summary:", requestSummary);
                     await emailQueue.add("assignment-complete", {
                         to: user.email,
                         assignmentTitle: assignmentOwner.title,
@@ -187,7 +189,9 @@ const startWorker = async () => {
                         userName: `${user.firstName} ${user.lastName}`.trim(),
                         assignmentId,
                         resultId: resultDoc._id.toString(),
+                        requestSummary,
                     });
+                    console.log("Email job added to queue for user:", user.email);
                 }
             }
         },

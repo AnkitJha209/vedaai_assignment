@@ -12,17 +12,45 @@ const startWorker = () => {
     const worker = new Worker(
         emailQueueName,
         async (job) => {
-            const { to, assignmentTitle, pdfUrl, userName } = job.data || {};
-            if (!to || !assignmentTitle || !pdfUrl) {
-                throw new Error("to, assignmentTitle, and pdfUrl are required");
+            const {
+                to,
+                assignmentTitle,
+                pdfUrl,
+                userName,
+                assignmentId,
+                requestSummary,
+                scoreSummary,
+            } = job.data || {};
+            if (!to || !assignmentTitle || !pdfUrl || !assignmentId) {
+                throw new Error(
+                    "to, assignmentTitle, pdfUrl, and assignmentId are required",
+                );
             }
+            console.log("Processing email job with data:", job.data);
+
+            const frontendBase = process.env.FRONTEND_ORIGIN;
+            if (!frontendBase) {
+                throw new Error("FRONTEND_URL is not set");
+            }
+
+            const base = frontendBase.replace(/\/$/, "");
+            const resultUrl = `${base}/assignmentId=${encodeURIComponent(
+                assignmentId,
+            )}/result`;
+
+            console.log("Generated result URL:", resultUrl);
 
             await sendAssignmentReadyEmail({
                 to,
                 assignmentTitle,
                 pdfUrl,
                 userName,
+                resultUrl,
+                requestSummary,
+                scoreSummary,
             });
+
+            console.log("Email sent successfully to", to);
         },
         { connection: assignmentQueueConnection },
     );

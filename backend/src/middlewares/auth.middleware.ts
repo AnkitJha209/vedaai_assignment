@@ -7,7 +7,6 @@ dotenv.config();
 export const verifyToken = async (req: Request, res: Response, next: NextFunction) => {
     try {
         const token = req.cookies.token
-        console.log(token)
         if(!token){
             res.status(404).json({
                 success:false,

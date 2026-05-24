@@ -5,8 +5,6 @@ import cors from "cors";
 import { connectDB } from "./config/database.js";
 import authRoutes from "./routes/auth.routes.js";
 import assignmentRoutes from "./routes/assignment.routes.js";
-import resultRoutes from "./routes/result.routes.js";
-import dashboardRoutes from "./routes/dashboard.routes.js";
 import subjectRoutes from "./routes/subject.routes.js";
 dotenv.config();
 
@@ -29,8 +27,6 @@ app.get("/", (req, res) => {
 
 app.use("/api/auth", authRoutes);
 app.use("/api/assignments", assignmentRoutes);
-app.use("/api/results", resultRoutes);
-app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/subjects", subjectRoutes);
 
 await connectDB();

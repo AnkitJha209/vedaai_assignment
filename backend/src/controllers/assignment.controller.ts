@@ -199,10 +199,8 @@ export const getAssignmentById = async (req: Request, res: Response) => {
     }
 };
 
-export const getAssignmentLatestResult = async (
-    req: Request,
-    res: Response,
-) => {
+
+export const getResultById = async (req: Request, res: Response) => {
     try {
         const userId = (req as any).user?.id;
         if (!userId) {
@@ -210,38 +208,18 @@ export const getAssignmentLatestResult = async (
             return;
         }
 
-        const rawId = (req.params as { id?: string | string[] }).id;
-        if (
-            !rawId ||
-            Array.isArray(rawId) ||
-            !mongoose.isValidObjectId(rawId)
-        ) {
+        const { id } = req.params;
+        if (!mongoose.isValidObjectId(id)) {
             res.status(400).json({ success: false, message: "Invalid id" });
             return;
         }
-        const id = rawId as string;
 
-        const assignment = await Assignment.findOne({
-            _id: id,
-            ownerId: new mongoose.Types.ObjectId(userId),
-        })
-            .select("_id")
-            .lean();
-        if (!assignment) {
-            res.status(404).json({
-                success: false,
-                message: "Assignment not found",
-            });
-            return;
-        }
+        const rawResultId = id as string;
 
         const result = await Result.findOne({
-            assignmentId: new mongoose.Types.ObjectId(id),
+            assignmentId: new mongoose.Types.ObjectId(rawResultId),
             ownerId: new mongoose.Types.ObjectId(userId),
-        })
-            .sort({ createdAt: -1 })
-            .lean();
-
+        }).lean();
         if (!result) {
             res.status(404).json({
                 success: false,
@@ -260,7 +238,7 @@ export const getAssignmentLatestResult = async (
     }
 };
 
-export const regenerateAssignment = async (req: Request, res: Response) => {
+export const getResultPdf = async (req: Request, res: Response) => {
     try {
         const userId = (req as any).user?.id;
         if (!userId) {
@@ -273,34 +251,20 @@ export const regenerateAssignment = async (req: Request, res: Response) => {
             res.status(400).json({ success: false, message: "Invalid id" });
             return;
         }
+        const rawId = id as string
 
-        const assignment = await Assignment.findOne({
-            _id: id,
-            ownerId: userId,
-        });
-        if (!assignment) {
-            res.status(404).json({
-                success: false,
-                message: "Assignment not found",
-            });
+        const result = await Result.findOne({
+            assignmentId: new mongoose.Types.ObjectId(rawId),
+            ownerId: new mongoose.Types.ObjectId(userId),
+        })
+            .select("pdfUrl")
+            .lean();
+        if (!result?.pdfUrl) {
+            res.status(404).json({ success: false, message: "PDF not found" });
             return;
         }
 
-        await Assignment.findByIdAndUpdate(id, { status: "pending" });
-        const job = await assignmentQueue.add(
-            "generate-assignment",
-            { assignmentId: id },
-            { removeOnComplete: true, removeOnFail: false },
-        );
-
-        await Assignment.findByIdAndUpdate(id, { jobId: job.id });
-
-        res.status(200).json({
-            success: true,
-            message: "Assignment regeneration queued",
-            assignmentId: id,
-            jobId: job.id,
-        });
+        res.redirect(result.pdfUrl);
     } catch (error) {
         console.error(error);
         res.status(500).json({
@@ -309,3 +273,4 @@ export const regenerateAssignment = async (req: Request, res: Response) => {
         });
     }
 };
+
