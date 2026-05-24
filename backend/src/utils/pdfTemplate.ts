@@ -25,13 +25,20 @@ export const buildExamHtml = (params: PdfTemplateParams): string => {
         <header class="header">
             <div class="school">${escapeHtml(params.schoolName ?? "School Name")}</div>
             <div class="title">${escapeHtml(params.title)}</div>
-            <div class="meta">Subject: ${escapeHtml(params.subjectName)} | Class: ${escapeHtml(
-                params.gradeLevel,
-            )} | Exam Date: ${params.examDate.toDateString()} | Maximum Marks: ${params.totalMarks}</div>
+            <div class="meta">Subject: ${escapeHtml(params.subjectName)}</div>
+            <div class="meta">Class: ${escapeHtml(params.gradeLevel)}</div>
         </header>
+        <section class="meta-row">
+            <span>Time Allowed: 45 minutes</span>
+            <span>Maximum Marks: ${params.totalMarks}</span>
+        </section>
+        <section class="instructions">
+            <div>All questions are compulsory unless stated otherwise.</div>
+        </section>
         <section class="student">
             <span>Name: __________________________</span>
-            <span>Roll No: _____________</span>
+            <span>Roll Number: _____________</span>
+            <span>Class: ${escapeHtml(params.gradeLevel)} Section: _______</span>
         </section>
     `;
 
@@ -98,45 +105,60 @@ export const buildExamHtml = (params: PdfTemplateParams): string => {
                     body {
                         font-family: "Times New Roman", serif;
                         color: #111;
-                        margin: 40px;
+                        margin: 32px 40px 36px;
+                        font-size: 12px;
                     }
                     .header {
                         text-align: center;
-                        margin-bottom: 16px;
+                        margin-bottom: 10px;
                     }
                     .school {
-                        font-size: 18px;
+                        font-size: 17px;
                         font-weight: 700;
                     }
                     .title {
-                        font-size: 16px;
-                        margin-top: 4px;
+                        font-size: 13px;
+                        margin-top: 2px;
+                        font-weight: 600;
                     }
                     .meta {
-                        font-size: 12px;
-                        margin-top: 6px;
+                        font-size: 11px;
+                        margin-top: 2px;
+                    }
+                    .meta-row {
+                        display: flex;
+                        justify-content: space-between;
+                        margin: 10px 0 8px;
+                        font-size: 11px;
+                    }
+                    .instructions {
+                        margin-bottom: 8px;
+                        font-size: 11px;
                     }
                     .student {
                         display: flex;
                         justify-content: space-between;
-                        font-size: 12px;
-                        margin: 16px 0 20px;
+                        gap: 12px;
+                        font-size: 11px;
+                        margin: 10px 0 16px;
+                        flex-wrap: wrap;
                     }
                     .section {
-                        margin-bottom: 18px;
+                        margin-bottom: 16px;
                     }
                     .section-title {
-                        font-size: 14px;
+                        font-size: 12px;
                         font-weight: 700;
                         margin-bottom: 4px;
+                        text-align: center;
                     }
                     .section-instruction {
-                        font-size: 12px;
-                        margin-bottom: 8px;
+                        font-size: 11px;
+                        margin-bottom: 6px;
+                        text-align: left;
                     }
                     .question {
-                        margin-bottom: 10px;
-                        font-size: 12px;
+                        margin-bottom: 8px;
                     }
                     .question-text {
                         display: flex;
@@ -148,7 +170,7 @@ export const buildExamHtml = (params: PdfTemplateParams): string => {
                     }
                     .marks {
                         margin-left: auto;
-                        font-size: 11px;
+                        font-size: 10px;
                     }
                     .options {
                         margin: 6px 0 0 18px;
@@ -160,7 +182,7 @@ export const buildExamHtml = (params: PdfTemplateParams): string => {
                     }
                     .answers {
                         page-break-before: always;
-                        font-size: 12px;
+                        font-size: 11px;
                     }
                     .answers ol {
                         padding-left: 18px;

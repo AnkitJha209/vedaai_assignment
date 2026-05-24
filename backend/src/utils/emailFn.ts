@@ -5,6 +5,9 @@ type AssignmentEmailPayload = {
     userName?: string;
     assignmentTitle: string;
     pdfUrl: string;
+    resultUrl: string;
+    requestSummary?: string;
+    scoreSummary?: string;
 };
 
 const getTransporter = () => {
@@ -27,18 +30,41 @@ const getTransporter = () => {
 
 const buildAssignmentEmailHtml = (payload: AssignmentEmailPayload): string => {
     const greeting = payload.userName ? `Hi ${payload.userName},` : "Hi there,";
+    const summary = payload.requestSummary
+        ? `<p style="margin: 6px 0 0; color: #334155;">${payload.requestSummary}</p>`
+        : "";
+    const scoreLine = payload.scoreSummary
+        ? `<p style="margin: 8px 0 0; color: #0f172a; font-weight: 600;">${payload.scoreSummary}</p>`
+        : "";
     return `
-		<div style="font-family: Arial, sans-serif; color: #1a1a1a;">
-			<h2 style="margin-bottom: 4px;">Your assignment is ready</h2>
-			<p style="margin-top: 0;">${greeting}</p>
-			<p>We have generated the assignment <strong>${payload.assignmentTitle}</strong>.</p>
-			<p>You can download the paper using the button below:</p>
-			<p style="margin: 20px 0;">
-				<a href="${payload.pdfUrl}" style="background: #111827; color: #ffffff; padding: 12px 18px; text-decoration: none; border-radius: 6px; display: inline-block;">Download Assignment</a>
-			</p>
-			<p style="font-size: 12px; color: #6b7280;">If the button does not work, copy and paste this link in your browser:</p>
-			<p style="font-size: 12px; color: #6b7280;">${payload.pdfUrl}</p>
-		</div>
+        <div style="background: #f8fafc; padding: 24px;">
+            <div style="max-width: 640px; margin: 0 auto; font-family: 'Trebuchet MS', 'Segoe UI', Arial, sans-serif; color: #0f172a; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden;">
+                <div style="background: linear-gradient(135deg, #0f172a, #2563eb); color: #ffffff; padding: 22px 24px;">
+                    <div style="font-size: 12px; letter-spacing: 1.6px; text-transform: uppercase; opacity: 0.85;">Veda AI</div>
+                    <h1 style="margin: 8px 0 0; font-size: 22px;">Your assignment result is ready</h1>
+                    <p style="margin: 8px 0 0; font-size: 14px; opacity: 0.9;">${greeting} We have completed your request for <strong>${payload.assignmentTitle}</strong>.</p>
+                </div>
+                <div style="padding: 22px 24px;">
+                    <p style="margin: 0; font-size: 15px; line-height: 1.5;">
+                        Open the result page to review the full breakdown, then grab the PDF anytime.
+                    </p>
+                    ${summary}
+                    ${scoreLine}
+                    <div style="margin: 20px 0 10px; display: flex; flex-wrap: wrap; gap: 10px;">
+                        <a href="${payload.resultUrl}" style="background: #0ea5e9; color: #ffffff; padding: 12px 18px; text-decoration: none; border-radius: 8px; display: inline-block; font-weight: 600;">View Result</a>
+                        <a href="${payload.pdfUrl}" style="background: #0f172a; color: #ffffff; padding: 12px 18px; text-decoration: none; border-radius: 8px; display: inline-block; font-weight: 600;">Download PDF</a>
+                    </div>
+                    <div style="margin-top: 16px; padding: 14px 16px; background: #f1f5f9; border-radius: 10px;">
+                        <div style="font-size: 12px; color: #475569; text-transform: uppercase; letter-spacing: 1.2px;">Quick Links</div>
+                        <p style="margin: 8px 0 0; font-size: 13px; color: #334155; word-break: break-word;">Result page: ${payload.resultUrl}</p>
+                        <p style="margin: 6px 0 0; font-size: 13px; color: #334155; word-break: break-word;">PDF link: ${payload.pdfUrl}</p>
+                    </div>
+                    <p style="margin: 18px 0 0; font-size: 12px; color: #64748b;">
+                        If you did not request this, you can ignore this email.
+                    </p>
+                </div>
+            </div>
+        </div>
 	`;
 };
 
@@ -52,12 +78,12 @@ export const sendAssignmentReadyEmail = async (
 
     const transporter = getTransporter();
     const html = buildAssignmentEmailHtml(payload);
-    const text = `Your assignment "${payload.assignmentTitle}" is ready. Download: ${payload.pdfUrl}`;
+    const text = `Veda AI: Your assignment result is ready for "${payload.assignmentTitle}". Result: ${payload.resultUrl}. PDF: ${payload.pdfUrl}`;
 
     await transporter.sendMail({
         from,
         to: payload.to,
-        subject: "Your assignment is ready",
+        subject: "Veda AI: Your assignment result is ready",
         text,
         html,
     });
