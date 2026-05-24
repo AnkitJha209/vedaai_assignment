@@ -112,10 +112,11 @@ const startWorker = async () => {
                 totalMarks: assignment.totalMarks,
                 additionalInstructions:
                     assignment.additionalInstructions as string,
-                fileText: assignment.fileText as string,
+                pdfText: assignment.pdfText as string,
             };
 
             const userPrompt = buildAssignmentUserPrompt(promptInput);
+            console.log("Generated user prompt for assignment", { userPrompt });
             const response = await client.chat.completions.create({
                 model: process.env.GEMINI_MODEL ?? "gemini-3-flash-preview",
                 messages: [
@@ -124,6 +125,7 @@ const startWorker = async () => {
                 ],
             });
             const rawText = response.choices[0]?.message?.content ?? "";
+            console.log("Generated raw text for assignment", { rawText });
             const parsedJson = extractJson(rawText);
             const generatedPayload = resultPayloadSchema.parse(parsedJson);
 
@@ -191,7 +193,10 @@ const startWorker = async () => {
                         resultId: resultDoc._id.toString(),
                         requestSummary,
                     });
-                    console.log("Email job added to queue for user:", user.email);
+                    console.log(
+                        "Email job added to queue for user:",
+                        user.email,
+                    );
                 }
             }
         },

@@ -24,9 +24,11 @@
         "ioredis": "^5.6.1",
         "jsonwebtoken": "^9.0.3",
         "mongoose": "^9.6.2",
+        "multer": "^2.0.2",
         "nodemailer": "^6.10.1",
         "openai": "^5.23.2",
         "puppeteer": "^24.12.0",
+        "pdf-parse": "^1.1.1",
         "redis": "^5.12.1",
         "zod": "^4.4.3"
     },
@@ -37,6 +39,7 @@
         "@types/express": "^5.0.6",
         "@types/jsonwebtoken": "^9.0.10",
         "@types/mongoose": "^5.11.96",
+        "@types/multer": "^2.0.0",
         "@types/nodemailer": "^6.4.17"
     }
 }

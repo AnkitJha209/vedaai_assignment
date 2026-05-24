@@ -92,11 +92,7 @@ const assignmentSchema = new Schema(
             default: undefined,
             trim: true,
         },
-        fileUrl: {
-            type: String,
-            default: undefined,
-        },
-        fileText: {
+        pdfText: {
             type: String,
             default: undefined,
         },

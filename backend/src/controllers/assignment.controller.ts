@@ -1,14 +1,42 @@
 import type { Request, Response } from "express";
 import mongoose from "mongoose";
+import pdfParse from "pdf-parse";
 import Assignment from "../models/assignment.model.js";
 import Result from "../models/result.model.js";
 import Subject from "../models/subject.model.js";
 import { assignmentSchema } from "../validation/validateSchema.js";
 import { assignmentQueue } from "../queues/assignment.queue.js";
 
+type AssignmentCreateInput = Record<string, unknown> & {
+    payload?: string;
+    fileText?: string;
+    pdfText?: string;
+};
+
+const parseAssignmentPayload = (body: AssignmentCreateInput) => {
+    if (typeof body.payload === "string" && body.payload.trim()) {
+        try {
+            return JSON.parse(body.payload);
+        } catch {
+            return null;
+        }
+    }
+
+    return body;
+};
+
 export const createAssignment = async (req: Request, res: Response) => {
     try {
-        const parsed = assignmentSchema.safeParse(req.body);
+        const incomingBody = req.body as AssignmentCreateInput;
+        const parsedInput = parseAssignmentPayload(incomingBody);
+        if (!parsedInput) {
+            res.status(400).json({
+                success: false,
+                message: "Invalid payload format",
+            });
+            return;
+        }
+        const parsed = assignmentSchema.safeParse(parsedInput);
         if (!parsed.success) {
             res.status(400).json({
                 success: false,
@@ -32,8 +60,21 @@ export const createAssignment = async (req: Request, res: Response) => {
                 ...parsed.data,
                 ownerId: userId,
                 status: "pending",
+                pdfText:
+                    parsed.data.pdfText ??
+                    parsedInput.pdfText ??
+                    parsedInput.fileText,
             }).filter(([, value]) => value !== undefined),
         );
+
+        const uploadedPdf = (req as Request & { file?: Express.Multer.File })
+            .file;
+        if (uploadedPdf?.buffer?.length) {
+            const parsedPdf = await pdfParse(uploadedPdf.buffer);
+            if (parsedPdf.text?.trim()) {
+                assignmentPayload.pdfText = parsedPdf.text;
+            }
+        }
 
         const assignment = await Assignment.create(assignmentPayload);
 
@@ -199,7 +240,6 @@ export const getAssignmentById = async (req: Request, res: Response) => {
     }
 };
 
-
 export const getResultById = async (req: Request, res: Response) => {
     try {
         const userId = (req as any).user?.id;
@@ -251,7 +291,7 @@ export const getResultPdf = async (req: Request, res: Response) => {
             res.status(400).json({ success: false, message: "Invalid id" });
             return;
         }
-        const rawId = id as string
+        const rawId = id as string;
 
         const result = await Result.findOne({
             assignmentId: new mongoose.Types.ObjectId(rawId),
@@ -273,4 +313,3 @@ export const getResultPdf = async (req: Request, res: Response) => {
         });
     }
 };
-

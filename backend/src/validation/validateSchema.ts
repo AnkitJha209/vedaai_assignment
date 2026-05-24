@@ -43,11 +43,13 @@ export const assignmentSchema = z.object({
     difficulty: z.enum(["easy", "medium", "hard", "mixed"]),
     additionalInstructions: z.string().trim().optional(),
     fileUrl: z.string().optional(),
+    pdfText: z.string().optional(),
     fileText: z.string().optional(),
 });
 
-
 export const createSubjectSchema = z.object({
     name: z.string().trim().min(1, "Subject name is required"),
-    questionTypes: z.array(z.string().trim().min(1, "Question type cannot be empty")).min(1, "At least one question type is required"),
+    questionTypes: z
+        .array(z.string().trim().min(1, "Question type cannot be empty"))
+        .min(1, "At least one question type is required"),
 });
