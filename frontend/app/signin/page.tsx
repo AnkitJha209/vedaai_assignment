@@ -143,12 +143,34 @@ export default function SignInPage() {
             </Button>
           </form>
 
-          <p className="mt-6 text-center text-sm text-gray-500">
-            Don&apos;t have an account?{" "}
-            <Link className="font-medium text-[#111111]" href="/signup">
-              Sign Up
-            </Link>
-          </p>
+          <div className="mt-8 space-y-4">
+            <div className="border-t border-gray-200 pt-4">
+              <p className="mb-3 text-center text-xs font-medium text-gray-600">
+                Demo Credentials
+              </p>
+              <button
+                type="button"
+                onClick={() => {
+                  setFormValues({
+                    email: "holmes.trevoraj@gmail.com",
+                    password: "Ankit209.",
+                  })
+                }}
+                className="w-full rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 text-left transition-colors hover:bg-gray-100"
+              >
+                <p className="text-xs font-medium text-gray-900">
+                  Email: holmes.trevoraj@gmail.com
+                </p>
+                <p className="text-xs text-gray-600">Password: Ankit209.</p>
+              </button>
+            </div>
+            <p className="text-center text-sm text-gray-500">
+              Don&apos;t have an account?{" "}
+              <Link className="font-medium text-[#111111]" href="/signup">
+                Sign Up
+              </Link>
+            </p>
+          </div>
         </CardContent>
       </Card>
     </div>
