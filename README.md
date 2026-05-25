@@ -6,6 +6,10 @@
 
 **Submission:** GitHub Repository + Deployed link
 
+**Deployed:** https://veda-ai.devxforge.tech/
+
+**Repository:** http://github.com/AnkitJha209/vedaai_assignment/
+
 ---
 
 ## Overview
@@ -272,9 +276,3 @@ A detailed AWS deployment guide is available on request. Recommended stack:
 
 ---
 
-## Submission
-
-- GitHub Repo with clean setup instructions
-- Deployed link
-
-Submission link: https://docs.google.com/forms/d/e/1FAIpQLSeL19GVvVT8vZrTx67hMWKTXLyJSyhkW5XGyzh7Ppt5w8P1jw/viewform?usp=dialog
