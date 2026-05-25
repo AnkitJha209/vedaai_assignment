@@ -1,6 +1,6 @@
 "use client"
 
-import { Bell, ChevronDown, ChevronLeft } from "lucide-react"
+import { Bell, ChevronDown, ChevronLeft, Layout } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import {
@@ -43,25 +43,37 @@ export function TopBar({ breadcrumbLabel }: TopBarProps) {
   }
 
   return (
-    <div className="flex items-center justify-between gap-4">
-      <div className="flex items-center gap-2 text-sm text-muted-foreground">
-        <ChevronLeft className="size-4" />
-        <span>{breadcrumbLabel}</span>
+    <div className="mb-5 flex items-center justify-between rounded-2xl border border-gray-200 bg-white px-4 py-3 shadow-[0_10px_24px_rgba(0,0,0,0.06)]">
+      <div className="flex items-center gap-3">
+        <button
+          type="button"
+          onClick={() => router.back()}
+          className="flex size-9 items-center justify-center rounded-full border border-gray-200 bg-[#f6f6f6] text-gray-600 transition hover:text-gray-900"
+        >
+          <ChevronLeft className="size-5" />
+        </button>
+        <div className="flex items-center gap-2 text-sm text-gray-500">
+          <Layout className="size-4 text-gray-400" />
+          <span>{breadcrumbLabel}</span>
+        </div>
       </div>
       <div className="flex items-center gap-4">
         <button
           type="button"
-          className="rounded-full border border-border bg-card p-2 text-muted-foreground"
+          className="relative flex size-9 items-center justify-center rounded-full border border-gray-200 bg-[#f6f6f6] text-gray-600 transition hover:text-gray-900"
         >
-          <Bell className="size-4" />
+          <Bell className="size-5" />
+          <span className="absolute top-1 right-1 size-2 rounded-full bg-orange-500"></span>
         </button>
         <DropdownMenu>
-          <DropdownMenuTrigger className="flex items-center gap-2 rounded-full border border-border bg-card px-3 py-1.5 text-sm text-foreground">
+          <DropdownMenuTrigger className="flex items-center gap-2 rounded-full border border-gray-200 bg-white px-2 py-1 text-sm text-gray-900 shadow-sm transition hover:text-gray-600">
             <Avatar className="size-7">
-              <AvatarFallback>{initials || "U"}</AvatarFallback>
+              <AvatarFallback className="text-xs">
+                {initials || "U"}
+              </AvatarFallback>
             </Avatar>
             <span className="hidden sm:block">{displayName}</span>
-            <ChevronDown className="size-3" />
+            <ChevronDown className="size-4" />
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             <DropdownMenuItem>Profile</DropdownMenuItem>

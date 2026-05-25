@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react"
 import type { FormEvent } from "react"
 import { useRouter } from "next/navigation"
+import { Mic, Minus, Plus, UploadCloud, X } from "lucide-react"
 import { TopBar } from "@/components/veda/topbar"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
@@ -34,6 +35,11 @@ export default function CreateAssignmentPage() {
   const [subjects, setSubjects] = useState<Subject[]>([])
   const [subjectsLoading, setSubjectsLoading] = useState(true)
   const [subjectId, setSubjectId] = useState("")
+  const [subjectModalOpen, setSubjectModalOpen] = useState(false)
+  const [newSubjectName, setNewSubjectName] = useState("")
+  const [newSubjectTypes, setNewSubjectTypes] = useState("")
+  const [subjectCreateLoading, setSubjectCreateLoading] = useState(false)
+  const [pdfFile, setPdfFile] = useState<File | null>(null)
   const [title, setTitle] = useState("")
   const [gradeLevel, setGradeLevel] = useState("")
   const [schoolName, setSchoolName] = useState("")
@@ -46,30 +52,30 @@ export default function CreateAssignmentPage() {
   const [error, setError] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
-  useEffect(() => {
-    const fetchSubjects = async () => {
-      setSubjectsLoading(true)
-      try {
-        const response = await fetch("/api/subjects", {
-          credentials: "include",
-        })
-        if (response.status === 401) {
-          router.replace("/signin")
-          return
-        }
-        if (!response.ok) {
-          throw new Error("Failed to load subjects")
-        }
-        const data = await response.json()
-        setSubjects(data?.data || [])
-      } catch (error) {
-        console.error(error)
-        setSubjects([])
-      } finally {
-        setSubjectsLoading(false)
+  const fetchSubjects = async () => {
+    setSubjectsLoading(true)
+    try {
+      const response = await fetch("/api/subjects", {
+        credentials: "include",
+      })
+      if (response.status === 401) {
+        router.replace("/signin")
+        return
       }
+      if (!response.ok) {
+        throw new Error("Failed to load subjects")
+      }
+      const data = await response.json()
+      setSubjects(data?.data || [])
+    } catch (error) {
+      console.error(error)
+      setSubjects([])
+    } finally {
+      setSubjectsLoading(false)
     }
+  }
 
+  useEffect(() => {
     fetchSubjects()
   }, [router])
 
@@ -138,6 +144,66 @@ export default function CreateAssignmentPage() {
     )
   }
 
+  const handleCreateSubject = async () => {
+    setError(null)
+
+    const name = newSubjectName.trim()
+    const questionTypes = newSubjectTypes
+      .split(",")
+      .map((item) => item.trim())
+      .filter(Boolean)
+
+    if (!name) {
+      setError("Subject name is required.")
+      return
+    }
+
+    if (questionTypes.length === 0) {
+      setError("Add at least one question type for the new subject.")
+      return
+    }
+
+    if (new Set(questionTypes).size !== questionTypes.length) {
+      setError("Question types must be unique.")
+      return
+    }
+
+    setSubjectCreateLoading(true)
+    try {
+      const response = await fetch("/api/subjects", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ name, questionTypes }),
+      })
+
+      if (response.status === 401) {
+        router.replace("/signin")
+        return
+      }
+
+      const data = await response.json().catch(() => ({}))
+      if (!response.ok || !data?.success) {
+        setError(data?.message || "Could not create subject.")
+        return
+      }
+
+      await fetchSubjects()
+      const createdSubject = data?.data
+      if (createdSubject?.id) {
+        setSubjectId(createdSubject.id)
+      }
+      setNewSubjectName("")
+      setNewSubjectTypes("")
+      setSubjectModalOpen(false)
+    } catch (error) {
+      console.error(error)
+      setError("Could not create subject. Please try again.")
+    } finally {
+      setSubjectCreateLoading(false)
+    }
+  }
+
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     setError(null)
@@ -198,11 +264,16 @@ export default function CreateAssignmentPage() {
 
     setIsSubmitting(true)
     try {
+      const formData = new FormData()
+      formData.append("payload", JSON.stringify(payload))
+      if (pdfFile) {
+        formData.append("pdfFile", pdfFile)
+      }
+
       const response = await fetch("/api/assignments", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify(payload),
+        body: formData,
       })
 
       if (response.status === 401) {
@@ -226,141 +297,211 @@ export default function CreateAssignmentPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       <TopBar breadcrumbLabel="Create Assignment" />
 
-      <div>
-        <h1 className="text-2xl font-semibold text-foreground">
-          Create assignment
-        </h1>
-        <p className="text-sm text-muted-foreground">
-          Set the core details, choose a subject, and define the question
-          breakdown.
-        </p>
-      </div>
+      <section className="rounded-[26px] border border-gray-200 bg-white px-5 py-4 shadow-[0_10px_24px_rgba(0,0,0,0.06)]">
+        <div className="flex flex-col gap-2">
+          <div className="flex items-center gap-2 text-xs font-semibold tracking-[0.18em] text-gray-500 uppercase">
+            <span className="size-2 rounded-full bg-[#22c55e]" />
+            Create assignment
+          </div>
+          <h1 className="text-[26px] font-semibold tracking-tight text-gray-900">
+            Create Assignment
+          </h1>
+          <p className="max-w-2xl text-sm text-gray-500">
+            Set up a new assignment, choose or create a subject, attach a PDF,
+            and define the question breakdown.
+          </p>
+        </div>
+      </section>
 
-      <form className="space-y-6" onSubmit={handleSubmit}>
-        <Card className="rounded-xl border border-border">
-          <CardContent className="grid gap-5 p-6 md:grid-cols-2">
-            <div className="space-y-2 md:col-span-2">
-              <Label htmlFor="title">Assignment title</Label>
-              <Input
-                id="title"
-                placeholder="Mid-term Algebra Review"
-                value={title}
-                onChange={(event) => setTitle(event.target.value)}
-              />
+      <form className="space-y-5" onSubmit={handleSubmit}>
+        <Card className="rounded-[30px] border border-gray-200 bg-white shadow-[0_16px_36px_rgba(0,0,0,0.08)]">
+          <CardContent className="space-y-6 p-6 md:p-8">
+            <div className="h-1.5 w-full overflow-hidden rounded-full bg-[#e6e6e6]">
+              <div className="h-full w-[38%] rounded-full bg-[#111111]" />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="subject">Subject</Label>
-              <select
-                id="subject"
-                className="h-10 w-full rounded-lg border border-border bg-card px-3 text-sm text-foreground"
-                value={subjectId}
-                onChange={(event) => setSubjectId(event.target.value)}
-                disabled={subjectsLoading}
-              >
-                <option value="">Select subject</option>
-                {subjects.map((subject) => (
-                  <option key={subject._id} value={subject._id}>
-                    {subject.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="gradeLevel">Grade level</Label>
-              <Input
-                id="gradeLevel"
-                placeholder="Grade 8"
-                value={gradeLevel}
-                onChange={(event) => setGradeLevel(event.target.value)}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="schoolName">School name (optional)</Label>
-              <Input
-                id="schoolName"
-                placeholder="Veda Public School"
-                value={schoolName}
-                onChange={(event) => setSchoolName(event.target.value)}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="dueDate">Due date</Label>
-              <Input
-                id="dueDate"
-                type="date"
-                value={dueDate}
-                onChange={(event) => setDueDate(event.target.value)}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="difficulty">Difficulty</Label>
-              <select
-                id="difficulty"
-                className="h-10 w-full rounded-lg border border-border bg-card px-3 text-sm text-foreground"
-                value={difficulty}
-                onChange={(event) => setDifficulty(event.target.value)}
-              >
-                {difficultyOptions.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="space-y-2 md:col-span-2">
-              <Label htmlFor="instructions">Additional instructions</Label>
-              <Textarea
-                id="instructions"
-                rows={4}
-                placeholder="Include any special directions for the AI generator."
-                value={additionalInstructions}
-                onChange={(event) =>
-                  setAdditionalInstructions(event.target.value)
-                }
-              />
-            </div>
-          </CardContent>
-        </Card>
 
-        <Card className="rounded-xl border border-border">
-          <CardContent className="space-y-4 p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <h2 className="text-lg font-semibold text-foreground">
-                  Question breakdown
-                </h2>
-                <p className="text-sm text-muted-foreground">
-                  Choose the types, number of questions, and marks for each.
+            <div className="rounded-[24px] border border-gray-200 bg-[#f7f7f7] p-5 md:p-6">
+              <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+                <div>
+                  <h2 className="text-[18px] font-semibold text-gray-900">
+                    Assignment Details
+                  </h2>
+                  <p className="text-sm text-gray-500">
+                    Basic information about your assignment.
+                  </p>
+                </div>
+                <Button
+                  type="button"
+                  variant="default"
+                  className="h-9 rounded-full border border-orange-400 bg-[#111111] px-4 text-xs font-semibold text-white shadow-sm hover:bg-[#1a1a1a]"
+                  onClick={() => setSubjectModalOpen(true)}
+                >
+                  Create your own subject
+                </Button>
+              </div>
+
+              <div className="mt-5 grid gap-5 md:grid-cols-2">
+                <div className="space-y-2 md:col-span-2">
+                  <Label htmlFor="title">Assignment title</Label>
+                  <Input
+                    id="title"
+                    className="h-11 rounded-full border border-gray-200 bg-white text-gray-900 shadow-sm placeholder:text-gray-400"
+                    placeholder="Mid-term Algebra Review"
+                    value={title}
+                    onChange={(event) => setTitle(event.target.value)}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="subject">Subject</Label>
+                  <select
+                    id="subject"
+                    className="h-11 w-full rounded-full border border-gray-200 bg-white px-4 text-sm text-gray-900 shadow-sm"
+                    value={subjectId}
+                    onChange={(event) => setSubjectId(event.target.value)}
+                    disabled={subjectsLoading}
+                  >
+                    <option value="">Select subject</option>
+                    {subjects.map((subject) => (
+                      <option key={subject._id} value={subject._id}>
+                        {subject.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="gradeLevel">Grade level</Label>
+                  <Input
+                    id="gradeLevel"
+                    className="h-11 rounded-full border border-gray-200 bg-white text-gray-900 shadow-sm placeholder:text-gray-400"
+                    placeholder="Grade 8"
+                    value={gradeLevel}
+                    onChange={(event) => setGradeLevel(event.target.value)}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="schoolName">School name (optional)</Label>
+                  <Input
+                    id="schoolName"
+                    className="h-11 rounded-full border border-gray-200 bg-white text-gray-900 shadow-sm placeholder:text-gray-400"
+                    placeholder="Veda Public School"
+                    value={schoolName}
+                    onChange={(event) => setSchoolName(event.target.value)}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="dueDate">Due date</Label>
+                  <Input
+                    id="dueDate"
+                    type="date"
+                    className="h-11 rounded-full border border-gray-200 bg-white text-gray-900 shadow-sm"
+                    value={dueDate}
+                    onChange={(event) => setDueDate(event.target.value)}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="difficulty">Difficulty</Label>
+                  <select
+                    id="difficulty"
+                    className="h-11 w-full rounded-full border border-gray-200 bg-white px-4 text-sm text-gray-900 shadow-sm"
+                    value={difficulty}
+                    onChange={(event) => setDifficulty(event.target.value)}
+                  >
+                    {difficultyOptions.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <div className="rounded-[24px] border border-gray-200 bg-white p-6">
+              <div className="flex items-center gap-3">
+                <div className="flex size-12 items-center justify-center rounded-full bg-[#f3f3f3] text-gray-600">
+                  <UploadCloud className="size-5" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-semibold text-gray-900">
+                    Choose a file or drag & drop it here
+                  </h3>
+                  <p className="text-xs text-gray-500">
+                    JPEG, PNG, PDF up to 10MB
+                  </p>
+                </div>
+              </div>
+              <div className="mt-4 flex flex-col items-start gap-3">
+                <label
+                  htmlFor="pdfFile"
+                  className="inline-flex h-9 cursor-pointer items-center rounded-full border border-orange-400 bg-[#111111] px-5 text-xs font-semibold text-white shadow-sm"
+                >
+                  Browse Files
+                </label>
+                <input
+                  id="pdfFile"
+                  type="file"
+                  accept="application/pdf,image/*"
+                  className="hidden"
+                  onChange={(event) => {
+                    const file = event.target.files?.[0] || null
+                    setPdfFile(file)
+                  }}
+                />
+                <p className="text-xs text-gray-500">
+                  Upload images of your preferred document or image.
                 </p>
               </div>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={handleAddBreakdown}
-                disabled={!subjectId}
-              >
-                Add type
-              </Button>
             </div>
 
-            {questionBreakdown.length === 0 ? (
-              <div className="rounded-lg border border-dashed border-border p-4 text-sm text-muted-foreground">
-                Select a subject to load available question types.
+            <div className="rounded-[24px] border border-gray-200 bg-white p-6">
+              <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                <div>
+                  <h2 className="text-[18px] font-semibold text-gray-900">
+                    Question Type
+                  </h2>
+                  <p className="text-sm text-gray-500">
+                    Choose the types, number of questions, and marks for each.
+                  </p>
+                </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="rounded-full border-gray-900 px-4 text-xs font-semibold text-gray-900"
+                  onClick={handleAddBreakdown}
+                  disabled={!subjectId}
+                >
+                  <Plus className="mr-2 size-3" />
+                  Add Question Type
+                </Button>
               </div>
-            ) : (
-              <div className="space-y-3">
-                {questionBreakdown.map((item, index) => (
-                  <div
-                    key={`${item.type}-${index}`}
-                    className="grid gap-3 rounded-lg border border-border bg-card p-4 md:grid-cols-[1.5fr,1fr,1fr,auto]"
-                  >
-                    <div className="space-y-1">
-                      <Label>Question type</Label>
+
+              {questionBreakdown.length === 0 ? (
+                <div className="mt-4 rounded-[18px] border border-dashed border-gray-200 bg-[#f7f7f7] p-6 text-sm text-gray-500">
+                  Select a subject to load available question types.
+                </div>
+              ) : (
+                <div className="mt-4 space-y-3">
+                  <div className="grid grid-cols-[1.6fr,1fr,1fr,auto] gap-3 px-3 text-xs font-semibold text-gray-500">
+                    <div>Question Type</div>
+                    <div className="text-center">No. of Questions</div>
+                    <div className="text-center">Marks</div>
+                    <div></div>
+                  </div>
+                  {questionBreakdown.map((item, index) => (
+                    <div
+                      key={`${item.type}-${index}`}
+                      className="grid items-center gap-3 rounded-[18px] border border-gray-200 bg-[#f9f9f9] p-3 md:grid-cols-[1.6fr,1fr,1fr,auto]"
+                    >
                       <select
-                        className="h-10 w-full rounded-lg border border-border bg-card px-3 text-sm text-foreground"
+                        className="h-10 w-full rounded-full border border-gray-200 bg-white px-4 text-sm text-gray-900"
                         value={item.type}
                         onChange={(event) =>
                           handleBreakdownChange(
@@ -378,75 +519,236 @@ export default function CreateAssignmentPage() {
                             </option>
                           ))}
                       </select>
-                    </div>
-                    <div className="space-y-1">
-                      <Label>Count</Label>
-                      <Input
-                        type="number"
-                        min={1}
-                        value={item.count}
-                        onChange={(event) =>
-                          handleBreakdownChange(
-                            index,
-                            "count",
-                            event.target.value
-                          )
-                        }
-                      />
-                    </div>
-                    <div className="space-y-1">
-                      <Label>Marks each</Label>
-                      <Input
-                        type="number"
-                        min={0}
-                        value={item.marksPerQuestion}
-                        onChange={(event) =>
-                          handleBreakdownChange(
-                            index,
-                            "marksPerQuestion",
-                            event.target.value
-                          )
-                        }
-                      />
-                    </div>
-                    <div className="flex items-end">
-                      <Button
+                      <div className="flex items-center justify-center gap-2">
+                        <button
+                          type="button"
+                          className="flex size-8 items-center justify-center rounded-full border border-gray-200 bg-white text-gray-600"
+                          onClick={() => {
+                            const count = Math.max(1, Number(item.count) - 1)
+                            handleBreakdownChange(index, "count", String(count))
+                          }}
+                        >
+                          <Minus className="size-3" />
+                        </button>
+                        <input
+                          type="number"
+                          min={1}
+                          className="h-9 w-12 rounded-full border border-gray-200 text-center text-sm text-gray-900"
+                          value={item.count}
+                          onChange={(event) =>
+                            handleBreakdownChange(
+                              index,
+                              "count",
+                              event.target.value
+                            )
+                          }
+                        />
+                        <button
+                          type="button"
+                          className="flex size-8 items-center justify-center rounded-full border border-gray-200 bg-white text-gray-600"
+                          onClick={() => {
+                            const count = Math.max(1, Number(item.count) + 1)
+                            handleBreakdownChange(index, "count", String(count))
+                          }}
+                        >
+                          <Plus className="size-3" />
+                        </button>
+                      </div>
+                      <div className="flex items-center justify-center gap-2">
+                        <button
+                          type="button"
+                          className="flex size-8 items-center justify-center rounded-full border border-gray-200 bg-white text-gray-600"
+                          onClick={() => {
+                            const marks = Math.max(
+                              0,
+                              Number(item.marksPerQuestion) - 1
+                            )
+                            handleBreakdownChange(
+                              index,
+                              "marksPerQuestion",
+                              String(marks)
+                            )
+                          }}
+                        >
+                          <Minus className="size-3" />
+                        </button>
+                        <input
+                          type="number"
+                          min={0}
+                          className="h-9 w-12 rounded-full border border-gray-200 text-center text-sm text-gray-900"
+                          value={item.marksPerQuestion}
+                          onChange={(event) =>
+                            handleBreakdownChange(
+                              index,
+                              "marksPerQuestion",
+                              event.target.value
+                            )
+                          }
+                        />
+                        <button
+                          type="button"
+                          className="flex size-8 items-center justify-center rounded-full border border-gray-200 bg-white text-gray-600"
+                          onClick={() => {
+                            const marks = Math.max(
+                              0,
+                              Number(item.marksPerQuestion) + 1
+                            )
+                            handleBreakdownChange(
+                              index,
+                              "marksPerQuestion",
+                              String(marks)
+                            )
+                          }}
+                        >
+                          <Plus className="size-3" />
+                        </button>
+                      </div>
+                      <button
                         type="button"
-                        variant="ghost"
-                        className="text-sm text-red-600"
+                        className="flex size-8 items-center justify-center rounded-full border border-gray-200 bg-white text-gray-500"
                         onClick={() => handleRemoveBreakdown(index)}
                         disabled={questionBreakdown.length === 1}
                       >
-                        Remove
-                      </Button>
+                        <X className="size-4" />
+                      </button>
                     </div>
-                  </div>
-                ))}
-              </div>
-            )}
+                  ))}
+                </div>
+              )}
 
-            <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
-              <span>Total questions: {totals.totalQuestions}</span>
-              <span>Total marks: {totals.totalMarks}</span>
+              <div className="mt-4 flex flex-wrap gap-4 rounded-[16px] bg-[#f3f3f3] px-4 py-3 text-sm text-gray-500">
+                <span>Total questions: {totals.totalQuestions}</span>
+                <span>Total marks: {totals.totalMarks}</span>
+              </div>
+            </div>
+
+            <div className="rounded-[24px] border border-gray-200 bg-white p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-[18px] font-semibold text-gray-900">
+                    Additional Information
+                  </h2>
+                  <p className="text-sm text-gray-500">
+                    Provide extra context for better output.
+                  </p>
+                </div>
+              </div>
+              <div className="relative mt-4">
+                <Textarea
+                  id="instructions"
+                  rows={4}
+                  className="rounded-[18px] border border-gray-200 bg-[#fafafa] pr-12 text-gray-900 shadow-sm placeholder:text-gray-400"
+                  placeholder="e.g. Generate a question paper for 3 hour exam duration..."
+                  value={additionalInstructions}
+                  onChange={(event) =>
+                    setAdditionalInstructions(event.target.value)
+                  }
+                />
+                <button
+                  type="button"
+                  className="absolute right-3 bottom-3 flex size-8 items-center justify-center rounded-full border border-gray-200 bg-white text-gray-500"
+                >
+                  <Mic className="size-4" />
+                </button>
+              </div>
             </div>
           </CardContent>
         </Card>
 
         {error ? (
-          <div className="rounded-lg border border-dashed border-border bg-card p-4 text-sm text-red-600">
+          <div className="rounded-[18px] border border-dashed border-gray-200 bg-white p-4 text-sm text-red-600 shadow-sm">
             {error}
           </div>
         ) : null}
 
-        <div className="flex justify-end gap-3">
-          <Button type="button" variant="outline" onClick={() => router.back()}>
+        <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+          <Button
+            type="button"
+            variant="outline"
+            className="h-11 rounded-full border-gray-300 px-5"
+            onClick={() => router.back()}
+          >
             Cancel
           </Button>
-          <Button type="submit" disabled={isSubmitting}>
+          <Button
+            type="submit"
+            disabled={isSubmitting}
+            className="h-11 rounded-full border border-orange-400 bg-[#111111] px-6 text-white shadow-[0_12px_28px_rgba(0,0,0,0.18)] hover:bg-[#1a1a1a]"
+          >
             {isSubmitting ? "Creating..." : "Create assignment"}
           </Button>
         </div>
       </form>
+
+      {subjectModalOpen ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
+          <div className="w-full max-w-lg rounded-3xl border border-gray-200 bg-white p-6 shadow-[0_20px_50px_rgba(0,0,0,0.25)]">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <h2 className="text-lg font-semibold text-gray-900">
+                  Create a new subject
+                </h2>
+                <p className="text-sm text-gray-500">
+                  Add a custom subject and the question types it should offer.
+                </p>
+              </div>
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={() => setSubjectModalOpen(false)}
+              >
+                Close
+              </Button>
+            </div>
+
+            <div className="mt-5 space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="newSubjectName">Subject name</Label>
+                <Input
+                  id="newSubjectName"
+                  className="h-11 rounded-full border-gray-200 bg-white text-gray-900 placeholder:text-gray-400"
+                  placeholder="Mathematics"
+                  value={newSubjectName}
+                  onChange={(event) => setNewSubjectName(event.target.value)}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="newSubjectTypes">
+                  Question types separated by commas
+                </Label>
+                <Textarea
+                  id="newSubjectTypes"
+                  rows={4}
+                  className="rounded-[18px] border border-gray-200 bg-white text-gray-900 placeholder:text-gray-400"
+                  placeholder="MCQ, Short Answer, Long Answer"
+                  value={newSubjectTypes}
+                  onChange={(event) => setNewSubjectTypes(event.target.value)}
+                />
+              </div>
+
+              <div className="flex justify-end gap-3 pt-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="rounded-full"
+                  onClick={() => setSubjectModalOpen(false)}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="button"
+                  className="rounded-full border border-orange-400 bg-[#111111] text-white hover:bg-[#1a1a1a]"
+                  onClick={handleCreateSubject}
+                  disabled={subjectCreateLoading}
+                >
+                  {subjectCreateLoading ? "Creating..." : "Create subject"}
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   )
 }

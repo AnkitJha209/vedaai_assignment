@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { ChevronDown, MoreVertical, Search, Sparkles } from "lucide-react"
+import { ChevronDown, MoreVertical, Search } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
@@ -14,8 +14,9 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { TopBar } from "@/components/veda/topbar"
+// import { TopBar } from "@/components/veda/topbar"
 import { cn } from "@/lib/utils"
+import { TopBar } from "@/components/veda/topbar"
 
 const statusOptions = [
   { label: "All", value: "all" },
@@ -82,95 +83,131 @@ export default function AssignmentsPage() {
   }, [router])
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       <TopBar breadcrumbLabel="Assignments" />
 
-      <div>
-        <h1 className="text-2xl font-semibold text-foreground">Assignments</h1>
-        <p className="text-sm text-muted-foreground">
-          Manage and create assignments for your classes.
-        </p>
-      </div>
+      <section className="rounded-[26px] border border-gray-200 bg-white px-5 py-4 shadow-[0_10px_24px_rgba(0,0,0,0.06)]">
+        <div className="flex flex-col gap-2">
+          <div className="flex items-center gap-2 text-xs font-semibold tracking-[0.18em] text-gray-500 uppercase">
+            <span className="size-2 rounded-full bg-[#22c55e]" />
+            Assignments
+          </div>
+          <h1 className="text-[26px] font-semibold tracking-tight text-gray-900">
+            Assignments
+          </h1>
+          <p className="text-sm text-gray-500">
+            Manage, review, and create assignments for your classes.
+          </p>
+        </div>
 
-      <div className="flex flex-col gap-3 rounded-xl border border-border bg-card p-4 sm:flex-row sm:items-center">
-        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-          <span>Filter By</span>
-          <div className="relative">
-            <select
-              className="h-9 rounded-lg border border-border bg-white px-3 pr-8 text-sm text-foreground"
-              value={statusFilter}
-              onChange={(event) => setStatusFilter(event.target.value)}
-            >
-              {statusOptions.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
-            <ChevronDown className="pointer-events-none absolute top-1/2 right-2 size-4 -translate-y-1/2 text-muted-foreground" />
+        <div className="mt-4 flex flex-col gap-3 rounded-[18px] border border-gray-200 bg-[#f3f3f3] p-3 lg:flex-row lg:items-center">
+          <div className="flex items-center gap-2 text-sm text-gray-500">
+            <span className="font-medium">Filter By</span>
+            <div className="relative">
+              <select
+                className="h-10 rounded-full border border-gray-200 bg-white px-4 pr-10 text-sm text-gray-900 shadow-sm"
+                value={statusFilter}
+                onChange={(event) => setStatusFilter(event.target.value)}
+              >
+                {statusOptions.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+              <ChevronDown className="pointer-events-none absolute top-1/2 right-3 size-4 -translate-y-1/2 text-gray-400" />
+            </div>
+          </div>
+          <div className="relative flex-1">
+            <Search className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-gray-400" />
+            <Input
+              className="h-10 rounded-full border border-gray-200 bg-white pl-9 shadow-sm"
+              placeholder="Search Assignment"
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+            />
           </div>
         </div>
-        <div className="relative flex-1">
-          <Search className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            className="pl-9"
-            placeholder="Search Assignment"
-            value={search}
-            onChange={(event) => setSearch(event.target.value)}
-          />
-        </div>
-      </div>
+      </section>
 
       {isLoading ? (
-        <div className="rounded-xl border border-border bg-card p-6 text-sm text-muted-foreground">
+        <div className="rounded-[22px] border border-gray-200 bg-white p-6 text-sm text-gray-500 shadow-sm">
           Loading assignments...
         </div>
       ) : error ? (
-        <div className="rounded-xl border border-dashed border-border bg-card p-6 text-sm text-red-600">
+        <div className="rounded-[22px] border border-dashed border-gray-200 bg-white p-6 text-sm text-red-600 shadow-sm">
           {error}
         </div>
       ) : filteredAssignments.length === 0 ? (
-        <div className="rounded-xl border border-dashed border-border bg-card p-10 text-center">
-          <div className="mx-auto flex size-16 items-center justify-center rounded-full bg-primary/10 text-primary">
-            <Sparkles className="size-7" />
+        <div className="rounded-[28px] border border-gray-200 bg-white p-12 text-center shadow-[0_12px_30px_rgba(0,0,0,0.08)]">
+          <div className="mx-auto flex size-28 items-center justify-center rounded-full bg-[#f3f3f3] shadow-inner">
+            <svg viewBox="0 0 120 120" className="size-20" aria-hidden>
+              <circle
+                cx="52"
+                cy="52"
+                r="30"
+                fill="#ffffff"
+                stroke="#d9d9d9"
+                strokeWidth="4"
+              />
+              <rect
+                x="72"
+                y="72"
+                width="30"
+                height="10"
+                rx="5"
+                transform="rotate(45 72 72)"
+                fill="#c9c9c9"
+              />
+              <circle cx="52" cy="52" r="18" fill="#f2f2f2" />
+              <path
+                d="M46 46 L58 58 M58 46 L46 58"
+                stroke="#ef4444"
+                strokeWidth="4"
+                strokeLinecap="round"
+              />
+            </svg>
           </div>
-          <h2 className="mt-4 text-lg font-semibold text-foreground">
+          <h2 className="mt-6 text-lg font-semibold text-gray-900">
             No assignments yet
           </h2>
-          <p className="mx-auto mt-2 max-w-md text-sm text-muted-foreground">
+          <p className="mx-auto mt-2 max-w-md text-sm text-gray-500">
             Create your first assignment to start collecting and grading student
             submissions. You can set up rubrics, define marking criteria, and
             let AI assist with grading.
           </p>
-          <Button asChild className="mt-6 rounded-lg">
+          <Button
+            asChild
+            className="mt-6 rounded-full border border-orange-400 bg-[#111111] px-6 text-white shadow-[0_12px_26px_rgba(0,0,0,0.18)] hover:bg-[#1a1a1a]"
+          >
             <Link href="/assignments/create">
               + Create Your First Assignment
             </Link>
           </Button>
         </div>
       ) : (
-        <div className="grid gap-5 md:grid-cols-2">
+        <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
           {filteredAssignments.map((assignment) => (
             <Card
               key={assignment._id}
-              className="rounded-xl border border-border shadow-sm"
+              className="rounded-[22px] border border-gray-200 bg-white shadow-[0_12px_26px_rgba(0,0,0,0.08)] transition hover:-translate-y-0.5 hover:shadow-[0_16px_30px_rgba(0,0,0,0.12)]"
             >
               <CardContent className="space-y-4 p-5">
-                <div className="flex items-start justify-between">
+                <div className="flex items-start justify-between gap-3">
                   <div>
-                    <h3 className="text-lg font-semibold text-foreground">
+                    <h3 className="text-[17px] font-semibold text-gray-900">
                       {assignment.title}
                     </h3>
-                    <p className="text-xs text-muted-foreground">
+                    <p className="mt-1 text-xs text-gray-500">
                       Assigned on:{" "}
                       {new Date(assignment.createdAt).toLocaleDateString()}
                     </p>
-                    <p className="text-xs text-muted-foreground">
+                    <p className="text-xs text-gray-500">
                       Due: {new Date(assignment.dueDate).toLocaleDateString()}
                     </p>
                   </div>
                   <DropdownMenu>
-                    <DropdownMenuTrigger className="rounded-full border border-border bg-card p-1.5 text-muted-foreground">
+                    <DropdownMenuTrigger className="rounded-full border border-gray-200 bg-[#f7f7f7] p-2 text-gray-400 transition hover:bg-[#efefef]">
                       <MoreVertical className="size-4" />
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
@@ -187,7 +224,7 @@ export default function AssignmentsPage() {
                 </div>
                 <Badge
                   className={cn(
-                    "w-fit capitalize",
+                    "w-fit rounded-full px-3 py-1 capitalize",
                     assignment.status === "completed"
                       ? "bg-green-100 text-green-700"
                       : assignment.status === "failed"
@@ -205,7 +242,7 @@ export default function AssignmentsPage() {
 
       <Button
         asChild
-        className="fixed bottom-20 left-1/2 z-20 w-[220px] -translate-x-1/2 rounded-full shadow-lg md:bottom-10"
+        className="fixed bottom-24 left-1/2 z-20 h-11 w-[220px] -translate-x-1/2 rounded-full border border-orange-400 bg-[#111111] text-white shadow-[0_12px_28px_rgba(0,0,0,0.22)] hover:bg-[#1a1a1a] md:bottom-10"
       >
         <Link href="/assignments/create">+ Create Assignment</Link>
       </Button>

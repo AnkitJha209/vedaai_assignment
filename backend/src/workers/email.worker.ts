@@ -34,7 +34,7 @@ const startWorker = () => {
             }
 
             const base = frontendBase.replace(/\/$/, "");
-            const resultUrl = `${base}/assignmentId=${encodeURIComponent(
+            const resultUrl = `${base}/assignments/${encodeURIComponent(
                 assignmentId,
             )}/result`;
 

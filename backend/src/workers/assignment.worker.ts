@@ -24,6 +24,7 @@ import {
 } from "../validation/resultSchema.js";
 import { generateExamPdfBuffer } from "../utils/pdf.js";
 import { uploadPdfToS3 } from "../utils/s3.js";
+import { compressPdfText } from "../utils/compress.js";
 
 dotenv.config();
 
@@ -98,6 +99,14 @@ const startWorker = async () => {
                 throw new Error("Subject not found");
             }
 
+            const compressedPdfText = assignment.pdfText
+                ? await compressPdfText(
+                      assignment.pdfText,
+                      client,
+                      process.env.GEMINI_MODEL ?? "gemini-2.0-flash",
+                  )
+                : undefined;
+
             const promptInput: AssignmentPromptInput = {
                 title: assignment.title,
                 subjectName: subject.name,
@@ -112,7 +121,7 @@ const startWorker = async () => {
                 totalMarks: assignment.totalMarks,
                 additionalInstructions:
                     assignment.additionalInstructions as string,
-                pdfText: assignment.pdfText as string,
+                pdfText: compressedPdfText as string,
             };
 
             const userPrompt = buildAssignmentUserPrompt(promptInput);

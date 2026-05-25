@@ -36,7 +36,7 @@ export const createSubject = async (req: Request, res: Response) => {
         }
         const newSubject = await Subject.create({
             name: name.trim(),
-            questionTypes: questionTypes.map((qt) => qt.trim()),
+            questionTypes: questionTypes.map((qt) => qt.toLowerCase().trim()),
         });
         res.status(201).json({
             success: true,

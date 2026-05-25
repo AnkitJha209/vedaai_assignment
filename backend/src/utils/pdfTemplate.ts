@@ -29,7 +29,6 @@ export const buildExamHtml = (params: PdfTemplateParams): string => {
             <div class="meta">Class: ${escapeHtml(params.gradeLevel)}</div>
         </header>
         <section class="meta-row">
-            <span>Time Allowed: 45 minutes</span>
             <span>Maximum Marks: ${params.totalMarks}</span>
         </section>
         <section class="instructions">

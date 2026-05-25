@@ -28,6 +28,20 @@ export async function POST(request: Request) {
     return new Response("Backend URL not configured", { status: 500 })
   }
 
+  const contentType = request.headers.get("content-type") || ""
+
+  if (contentType.includes("multipart/form-data")) {
+    const formData = await request.formData()
+    const headers = await buildAuthHeaders()
+    delete headers["Content-Type"]
+
+    return forwardJson(`${backendUrl}/assignments`, {
+      method: "POST",
+      headers,
+      body: formData,
+    })
+  }
+
   const body = await request.json().catch(() => ({}))
 
   return forwardJson(`${backendUrl}/assignments`, {

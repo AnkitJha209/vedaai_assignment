@@ -63,17 +63,16 @@ export default function SignInPage() {
   }
 
   return (
-    <div className="flex min-h-svh items-center justify-center bg-[#f5f5f5] px-4">
-      <Card className="w-full max-w-md rounded-xl border border-border shadow-sm">
+    <div className="flex min-h-svh items-center justify-center bg-[#ededed] px-4">
+      <div className="fixed inset-0 -z-10 bg-[radial-gradient(circle_at_top,_#f7f7f7,_#ededed_58%,_#e4e4e4)]" />
+      <Card className="w-full max-w-md rounded-[28px] border border-gray-200 bg-white shadow-[0_16px_36px_rgba(0,0,0,0.12)]">
         <CardHeader className="space-y-4">
           <VedaLogo />
           <div>
-            <h1 className="text-2xl font-semibold text-foreground">
+            <h1 className="text-2xl font-semibold text-gray-900">
               Welcome back
             </h1>
-            <p className="text-sm text-muted-foreground">
-              Sign in to your account
-            </p>
+            <p className="text-sm text-gray-500">Sign in to your account</p>
           </div>
         </CardHeader>
         <CardContent>
@@ -84,6 +83,7 @@ export default function SignInPage() {
                 id="email"
                 type="email"
                 placeholder="you@school.com"
+                className="h-11 rounded-full border-gray-200 bg-white"
                 value={formValues.email}
                 onChange={(event) => handleChange("email", event.target.value)}
               />
@@ -99,6 +99,7 @@ export default function SignInPage() {
                   id="password"
                   type={showPassword ? "text" : "password"}
                   placeholder="Enter your password"
+                  className="h-11 rounded-full border-gray-200 bg-white"
                   value={formValues.password}
                   onChange={(event) =>
                     handleChange("password", event.target.value)
@@ -131,16 +132,16 @@ export default function SignInPage() {
 
             <Button
               type="submit"
-              className="w-full rounded-lg"
+              className="w-full rounded-full border border-orange-400 bg-[#111111] text-white shadow-[0_12px_26px_rgba(0,0,0,0.18)] hover:bg-[#1a1a1a]"
               disabled={isLoading}
             >
               {isLoading ? "Signing In..." : "Sign In"}
             </Button>
           </form>
 
-          <p className="mt-6 text-center text-sm text-muted-foreground">
+          <p className="mt-6 text-center text-sm text-gray-500">
             Don&apos;t have an account?{" "}
-            <Link className="font-medium text-primary" href="/signup">
+            <Link className="font-medium text-[#111111]" href="/signup">
               Sign Up
             </Link>
           </p>

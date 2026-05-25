@@ -37,29 +37,31 @@ const buildAssignmentEmailHtml = (payload: AssignmentEmailPayload): string => {
         ? `<p style="margin: 8px 0 0; color: #0f172a; font-weight: 600;">${payload.scoreSummary}</p>`
         : "";
     return `
-        <div style="background: #f8fafc; padding: 24px;">
-            <div style="max-width: 640px; margin: 0 auto; font-family: 'Trebuchet MS', 'Segoe UI', Arial, sans-serif; color: #0f172a; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden;">
-                <div style="background: linear-gradient(135deg, #0f172a, #2563eb); color: #ffffff; padding: 22px 24px;">
-                    <div style="font-size: 12px; letter-spacing: 1.6px; text-transform: uppercase; opacity: 0.85;">Veda AI</div>
-                    <h1 style="margin: 8px 0 0; font-size: 22px;">Your assignment result is ready</h1>
-                    <p style="margin: 8px 0 0; font-size: 14px; opacity: 0.9;">${greeting} We have completed your request for <strong>${payload.assignmentTitle}</strong>.</p>
+        <div style="background: #ededed; padding: 24px;">
+            <div style="max-width: 640px; margin: 0 auto; font-family: 'Trebuchet MS', 'Segoe UI', Arial, sans-serif; color: #111827; background: #ffffff; border: 1px solid #e5e7eb; border-radius: 20px; overflow: hidden; box-shadow: 0 18px 45px rgba(0,0,0,0.08);">
+                <div style="background: #111111; color: #ffffff; padding: 22px 24px;">
+                    <div style="font-size: 11px; letter-spacing: 2px; text-transform: uppercase; opacity: 0.7;">Veda AI</div>
+                    <h1 style="margin: 8px 0 0; font-size: 22px; font-weight: 700;">Your assignment result is ready</h1>
+                    <p style="margin: 8px 0 0; font-size: 14px; opacity: 0.9;">${greeting} We completed <strong>${payload.assignmentTitle}</strong>.</p>
                 </div>
                 <div style="padding: 22px 24px;">
-                    <p style="margin: 0; font-size: 15px; line-height: 1.5;">
-                        Open the result page to review the full breakdown, then grab the PDF anytime.
-                    </p>
-                    ${summary}
-                    ${scoreLine}
-                    <div style="margin: 20px 0 10px; display: flex; flex-wrap: wrap; gap: 10px;">
-                        <a href="${payload.resultUrl}" style="background: #0ea5e9; color: #ffffff; padding: 12px 18px; text-decoration: none; border-radius: 8px; display: inline-block; font-weight: 600;">View Result</a>
-                        <a href="${payload.pdfUrl}" style="background: #0f172a; color: #ffffff; padding: 12px 18px; text-decoration: none; border-radius: 8px; display: inline-block; font-weight: 600;">Download PDF</a>
+                    <div style="border: 1px solid #e5e7eb; border-radius: 16px; padding: 16px; background: #f7f7f7;">
+                        <p style="margin: 0; font-size: 15px; line-height: 1.5; color: #374151;">
+                            Open the result page to review the breakdown, then download the PDF anytime.
+                        </p>
+                        ${summary}
+                        ${scoreLine}
                     </div>
-                    <div style="margin-top: 16px; padding: 14px 16px; background: #f1f5f9; border-radius: 10px;">
-                        <div style="font-size: 12px; color: #475569; text-transform: uppercase; letter-spacing: 1.2px;">Quick Links</div>
-                        <p style="margin: 8px 0 0; font-size: 13px; color: #334155; word-break: break-word;">Result page: ${payload.resultUrl}</p>
-                        <p style="margin: 6px 0 0; font-size: 13px; color: #334155; word-break: break-word;">PDF link: ${payload.pdfUrl}</p>
+                    <div style="margin: 18px 0 6px; display: flex; flex-wrap: wrap; gap: 10px;">
+                        <a href="${payload.resultUrl}" style="background: #111111; color: #ffffff; padding: 12px 18px; text-decoration: none; border-radius: 999px; display: inline-block; font-weight: 600; border: 1px solid #f97316;">View Result</a>
+                        <a href="${payload.pdfUrl}" style="background: #ffffff; color: #111111; padding: 12px 18px; text-decoration: none; border-radius: 999px; display: inline-block; font-weight: 600; border: 1px solid #e5e7eb;">Download PDF</a>
                     </div>
-                    <p style="margin: 18px 0 0; font-size: 12px; color: #64748b;">
+                    <div style="margin-top: 16px; padding: 14px 16px; background: #f3f3f3; border-radius: 14px; border: 1px solid #e5e7eb;">
+                        <div style="font-size: 11px; color: #6b7280; text-transform: uppercase; letter-spacing: 1.2px;">Quick Links</div>
+                        <p style="margin: 8px 0 0; font-size: 13px; color: #374151; word-break: break-word;">Result page: ${payload.resultUrl}</p>
+                        <p style="margin: 6px 0 0; font-size: 13px; color: #374151; word-break: break-word;">PDF link: ${payload.pdfUrl}</p>
+                    </div>
+                    <p style="margin: 18px 0 0; font-size: 12px; color: #6b7280;">
                         If you did not request this, you can ignore this email.
                     </p>
                 </div>
