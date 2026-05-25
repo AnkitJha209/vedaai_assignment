@@ -1,9 +1,8 @@
 "use client"
 
-import { useState } from "react"
-import { useRouter } from "next/navigation"
+import { useEffect, useState } from "react"
+import { useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
-import { Eye, EyeOff } from "lucide-react"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
@@ -12,16 +11,24 @@ import { VedaLogo } from "@/components/veda/logo"
 
 type FieldErrors = Record<string, string[] | undefined>
 
-export default function SignInPage() {
+export default function VerifyEmailPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const [isLoading, setIsLoading] = useState(false)
-  const [showPassword, setShowPassword] = useState(false)
+  const [isResending, setIsResending] = useState(false)
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({})
   const [formError, setFormError] = useState<string | null>(null)
   const [formValues, setFormValues] = useState({
     email: "",
-    password: "",
+    code: "",
   })
+
+  useEffect(() => {
+    const emailParam = searchParams.get("email")
+    if (emailParam) {
+      setFormValues((prev) => ({ ...prev, email: emailParam }))
+    }
+  }, [searchParams])
 
   const handleChange = (field: string, value: string) => {
     setFormValues((prev) => ({ ...prev, [field]: value }))
@@ -34,10 +41,9 @@ export default function SignInPage() {
     setFieldErrors({})
 
     try {
-      const response = await fetch("/api/auth/signin", {
+      const response = await fetch("/api/auth/verify-email", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        credentials: "include",
         body: JSON.stringify(formValues),
       })
 
@@ -48,17 +54,55 @@ export default function SignInPage() {
       }
 
       if (!response.ok) {
-        setFormError(data.message || "Unable to sign in.")
+        setFormError(data.message || "Unable to verify email.")
         setFieldErrors(data.errors || {})
         return
       }
 
-      router.push("/assignments")
+      router.push("/signin")
     } catch (error) {
       console.error(error)
       setFormError("Something went wrong. Please try again.")
     } finally {
       setIsLoading(false)
+    }
+  }
+
+  const handleResend = async () => {
+    if (!formValues.email) {
+      setFormError("Please enter your email to resend the code.")
+      return
+    }
+
+    setIsResending(true)
+    setFormError(null)
+    setFieldErrors({})
+
+    try {
+      const response = await fetch("/api/auth/resend-verification", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: formValues.email }),
+      })
+
+      const data = (await response.json()) as {
+        success?: boolean
+        message?: string
+        errors?: FieldErrors
+      }
+
+      if (!response.ok) {
+        setFormError(data.message || "Unable to resend code.")
+        setFieldErrors(data.errors || {})
+        return
+      }
+
+      setFormError("Verification code sent. Check your inbox.")
+    } catch (error) {
+      console.error(error)
+      setFormError("Something went wrong. Please try again.")
+    } finally {
+      setIsResending(false)
     }
   }
 
@@ -70,9 +114,11 @@ export default function SignInPage() {
           <VedaLogo />
           <div>
             <h1 className="text-2xl font-semibold text-gray-900">
-              Welcome back
+              Verify your email
             </h1>
-            <p className="text-sm text-gray-500">Sign in to your account</p>
+            <p className="text-sm text-gray-500">
+              Enter the 6-digit code we sent to your inbox.
+            </p>
           </div>
         </CardHeader>
         <CardContent>
@@ -95,36 +141,21 @@ export default function SignInPage() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="password" className="text-gray-700">
-                Password
+              <Label htmlFor="code" className="text-gray-700">
+                Verification Code
               </Label>
-              <div className="relative">
-                <Input
-                  id="password"
-                  type={showPassword ? "text" : "password"}
-                  placeholder="Enter your password"
-                  className="h-11 rounded-full border-gray-200 bg-white text-gray-900 placeholder:text-gray-400"
-                  value={formValues.password}
-                  onChange={(event) =>
-                    handleChange("password", event.target.value)
-                  }
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword((prev) => !prev)}
-                  className="absolute top-1/2 right-3 -translate-y-1/2 text-gray-500"
-                >
-                  {showPassword ? (
-                    <EyeOff className="size-4" />
-                  ) : (
-                    <Eye className="size-4" />
-                  )}
-                </button>
-              </div>
-              {fieldErrors.password?.length ? (
-                <p className="text-xs text-red-500">
-                  {fieldErrors.password[0]}
-                </p>
+              <Input
+                id="code"
+                inputMode="numeric"
+                placeholder="123456"
+                className="h-11 rounded-full border-gray-200 bg-white text-gray-900 placeholder:text-gray-400"
+                value={formValues.code}
+                onChange={(event) =>
+                  handleChange("code", event.target.value.replace(/\s/g, ""))
+                }
+              />
+              {fieldErrors.code?.length ? (
+                <p className="text-xs text-red-500">{fieldErrors.code[0]}</p>
               ) : null}
             </div>
 
@@ -139,16 +170,23 @@ export default function SignInPage() {
               className="w-full rounded-full border border-orange-400 bg-[#111111] text-white shadow-[0_12px_26px_rgba(0,0,0,0.18)] hover:bg-[#1a1a1a]"
               disabled={isLoading}
             >
-              {isLoading ? "Signing In..." : "Sign In"}
+              {isLoading ? "Verifying..." : "Verify Email"}
             </Button>
           </form>
 
-          <p className="mt-6 text-center text-sm text-gray-500">
-            Don&apos;t have an account?{" "}
-            <Link className="font-medium text-[#111111]" href="/signup">
-              Sign Up
+          <div className="mt-5 flex flex-wrap items-center justify-between gap-3 text-sm text-gray-500">
+            <button
+              type="button"
+              className="font-medium text-[#111111]"
+              onClick={handleResend}
+              disabled={isResending}
+            >
+              {isResending ? "Sending..." : "Resend code"}
+            </button>
+            <Link className="font-medium text-[#111111]" href="/signin">
+              Back to Sign In
             </Link>
-          </p>
+          </div>
         </CardContent>
       </Card>
     </div>

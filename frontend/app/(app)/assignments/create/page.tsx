@@ -703,10 +703,12 @@ export default function CreateAssignmentPage() {
 
             <div className="mt-5 space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="newSubjectName">Subject name</Label>
+                <Label htmlFor="newSubjectName" className="text-gray-700">
+                  Subject name
+                </Label>
                 <Input
                   id="newSubjectName"
-                  className="h-11 rounded-full border-gray-200 bg-white text-gray-900 placeholder:text-gray-400"
+                  className="h-11 rounded-full border-gray-300 bg-white text-gray-900 placeholder:text-gray-500"
                   placeholder="Mathematics"
                   value={newSubjectName}
                   onChange={(event) => setNewSubjectName(event.target.value)}
@@ -714,13 +716,13 @@ export default function CreateAssignmentPage() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="newSubjectTypes">
+                <Label htmlFor="newSubjectTypes" className="text-gray-700">
                   Question types separated by commas
                 </Label>
                 <Textarea
                   id="newSubjectTypes"
                   rows={4}
-                  className="rounded-[18px] border border-gray-200 bg-white text-gray-900 placeholder:text-gray-400"
+                  className="rounded-[18px] border border-gray-300 bg-white text-gray-900 placeholder:text-gray-500"
                   placeholder="MCQ, Short Answer, Long Answer"
                   value={newSubjectTypes}
                   onChange={(event) => setNewSubjectTypes(event.target.value)}

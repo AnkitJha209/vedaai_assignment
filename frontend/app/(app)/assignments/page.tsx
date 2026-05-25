@@ -39,6 +39,7 @@ export default function AssignmentsPage() {
   const [assignments, setAssignments] = useState<Assignment[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [deletingId, setDeletingId] = useState<string | null>(null)
   const [search, setSearch] = useState("")
   const [statusFilter, setStatusFilter] = useState("all")
 
@@ -81,6 +82,37 @@ export default function AssignmentsPage() {
 
     fetchAssignments()
   }, [router])
+
+  const handleDelete = async (assignmentId: string) => {
+    if (deletingId) return
+    const confirmed = window.confirm(
+      "Are you sure you want to delete this assignment?"
+    )
+    if (!confirmed) return
+
+    setDeletingId(assignmentId)
+    try {
+      const response = await fetch(`/api/assignments/${assignmentId}`, {
+        method: "DELETE",
+        credentials: "include",
+      })
+      if (response.status === 401) {
+        router.replace("/signin")
+        return
+      }
+      if (!response.ok) {
+        throw new Error("Failed to delete assignment")
+      }
+      setAssignments((prev) =>
+        prev.filter((assignment) => assignment._id !== assignmentId)
+      )
+    } catch (deleteError) {
+      console.error(deleteError)
+      window.alert("Could not delete assignment. Please try again.")
+    } finally {
+      setDeletingId(null)
+    }
+  }
 
   return (
     <div className="space-y-5">
@@ -217,7 +249,16 @@ export default function AssignmentsPage() {
                         </Link>
                       </DropdownMenuItem>
                       <DropdownMenuItem className="text-red-500">
-                        Delete
+                        <button
+                          type="button"
+                          className="w-full text-left"
+                          onClick={() => handleDelete(assignment._id)}
+                          disabled={deletingId === assignment._id}
+                        >
+                          {deletingId === assignment._id
+                            ? "Deleting..."
+                            : "Delete"}
+                        </button>
                       </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>

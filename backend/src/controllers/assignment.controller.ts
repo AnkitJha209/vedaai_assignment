@@ -6,12 +6,16 @@ import Result from "../models/result.model.js";
 import Subject from "../models/subject.model.js";
 import { assignmentSchema } from "../validation/validateSchema.js";
 import { assignmentQueue } from "../queues/assignment.queue.js";
+import { uploadPdfToS3 } from "../utils/s3.js";
 
 type AssignmentCreateInput = Record<string, unknown> & {
     payload?: string;
     fileText?: string;
     pdfText?: string;
 };
+
+const buildSourcePdfKey = (userId: string, assignmentId: string) =>
+    `users/${userId}/assignments/${assignmentId}/source.pdf`;
 
 const parseAssignmentPayload = (body: AssignmentCreateInput) => {
     if (typeof body.payload === "string" && body.payload.trim()) {
@@ -55,6 +59,8 @@ export const createAssignment = async (req: Request, res: Response) => {
             return;
         }
 
+        const assignmentId = new mongoose.Types.ObjectId();
+
         const assignmentPayload = Object.fromEntries(
             Object.entries({
                 ...parsed.data,
@@ -65,18 +71,40 @@ export const createAssignment = async (req: Request, res: Response) => {
                     parsedInput.pdfText ??
                     parsedInput.fileText,
             }).filter(([, value]) => value !== undefined),
-        );
+        ) as Record<string, unknown>;
 
         const uploadedPdf = (req as Request & { file?: Express.Multer.File })
             .file;
         if (uploadedPdf?.buffer?.length) {
+            if (uploadedPdf.mimetype !== "application/pdf") {
+                res.status(400).json({
+                    success: false,
+                    message: "Only PDF files are allowed",
+                });
+                return;
+            }
             const parsedPdf = await pdfParse(uploadedPdf.buffer);
             if (parsedPdf.text?.trim()) {
                 assignmentPayload.pdfText = parsedPdf.text;
             }
+
+            const sourcePdfKey = buildSourcePdfKey(
+                userId,
+                assignmentId.toString(),
+            );
+            const sourcePdfUrl = await uploadPdfToS3(
+                uploadedPdf.buffer,
+                sourcePdfKey,
+            );
+            assignmentPayload.sourcePdfUrl = sourcePdfUrl;
+            assignmentPayload.sourcePdfKey = sourcePdfKey;
+            assignmentPayload.sourcePdfName = uploadedPdf.originalname;
         }
 
-        const assignment = await Assignment.create(assignmentPayload);
+        const assignment = await Assignment.create({
+            _id: assignmentId,
+            ...assignmentPayload,
+        });
 
         console.log("Assignment created with ID", {
             assignmentId: assignment._id,
@@ -305,6 +333,67 @@ export const getResultPdf = async (req: Request, res: Response) => {
         }
 
         res.redirect(result.pdfUrl);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({
+            success: false,
+            message: "Internal server error",
+        });
+    }
+};
+
+export const deleteAssignment = async (req: Request, res: Response) => {
+    try {
+        const userId = (req as any).user?.id;
+        if (!userId) {
+            res.status(401).json({ success: false, message: "Unauthorized" });
+            return;
+        }
+
+        const { id } = req.params;
+        if (!mongoose.isValidObjectId(id)) {
+            res.status(400).json({ success: false, message: "Invalid id" });
+            return;
+        }
+        const rawId = id as string;
+
+        const assignmentObjectId = new mongoose.Types.ObjectId(rawId);
+        const ownerObjectId = new mongoose.Types.ObjectId(userId);
+
+        const assignment = await Assignment.findOne({
+            _id: assignmentObjectId,
+            ownerId: ownerObjectId,
+        })
+            .select("jobId")
+            .lean();
+
+        if (!assignment) {
+            res.status(404).json({
+                success: false,
+                message: "Assignment not found",
+            });
+            return;
+        }
+
+        if (assignment.jobId) {
+            const job = await assignmentQueue.getJob(assignment.jobId);
+            if (job) {
+                await job.remove();
+            }
+        }
+
+        await Promise.all([
+            Result.deleteMany({
+                assignmentId: assignmentObjectId,
+                ownerId: ownerObjectId,
+            }),
+            Assignment.deleteOne({
+                _id: assignmentObjectId,
+                ownerId: ownerObjectId,
+            }),
+        ]);
+
+        res.status(200).json({ success: true, message: "Assignment deleted" });
     } catch (error) {
         console.error(error);
         res.status(500).json({

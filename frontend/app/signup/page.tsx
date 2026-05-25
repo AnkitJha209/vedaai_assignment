@@ -16,16 +16,16 @@ export default function SignUpPage() {
   const router = useRouter()
   const [isLoading, setIsLoading] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
+  const [step, setStep] = useState<"form" | "verify">("form")
+  const [verificationCode, setVerificationCode] = useState("")
+  const [isResending, setIsResending] = useState(false)
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({})
   const [formError, setFormError] = useState<string | null>(null)
   const [formValues, setFormValues] = useState({
-    fullName: "",
-    schoolName: "",
-    city: "",
+    firstName: "",
+    lastName: "",
     email: "",
     password: "",
-    confirmPassword: "",
   })
 
   const handleChange = (field: string, value: string) => {
@@ -38,27 +38,26 @@ export default function SignUpPage() {
     setFormError(null)
     setFieldErrors({})
 
-    if (formValues.password !== formValues.confirmPassword) {
-      setFormError("Passwords do not match.")
-      setIsLoading(false)
-      return
-    }
-
-    const nameParts = formValues.fullName.trim().split(" ")
-    const firstName = nameParts.shift() || ""
-    const lastName = nameParts.join(" ") || "Teacher"
-
     try {
-      const response = await fetch("/api/auth/signup", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          firstName,
-          lastName,
-          email: formValues.email,
-          password: formValues.password,
-        }),
-      })
+      const response = await fetch(
+        step === "form" ? "/api/auth/signup" : "/api/auth/verify-email",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body:
+            step === "form"
+              ? JSON.stringify({
+                  firstName: formValues.firstName,
+                  lastName: formValues.lastName,
+                  email: formValues.email,
+                  password: formValues.password,
+                })
+              : JSON.stringify({
+                  email: formValues.email,
+                  code: verificationCode,
+                }),
+        }
+      )
 
       const data = (await response.json()) as {
         success?: boolean
@@ -67,8 +66,18 @@ export default function SignUpPage() {
       }
 
       if (!response.ok) {
-        setFormError(data.message || "Unable to create account.")
+        setFormError(
+          data.message ||
+            (step === "form"
+              ? "Unable to send verification code."
+              : "Unable to verify email.")
+        )
         setFieldErrors(data.errors || {})
+        return
+      }
+
+      if (step === "form") {
+        setStep("verify")
         return
       }
 
@@ -78,6 +87,44 @@ export default function SignUpPage() {
       setFormError("Something went wrong. Please try again.")
     } finally {
       setIsLoading(false)
+    }
+  }
+
+  const handleResend = async () => {
+    if (!formValues.email) {
+      setFormError("Please enter your email to resend the code.")
+      return
+    }
+
+    setIsResending(true)
+    setFormError(null)
+    setFieldErrors({})
+
+    try {
+      const response = await fetch("/api/auth/resend-verification", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: formValues.email }),
+      })
+
+      const data = (await response.json()) as {
+        success?: boolean
+        message?: string
+        errors?: FieldErrors
+      }
+
+      if (!response.ok) {
+        setFormError(data.message || "Unable to resend code.")
+        setFieldErrors(data.errors || {})
+        return
+      }
+
+      setFormError("Verification code sent. Check your inbox.")
+    } catch (error) {
+      console.error(error)
+      setFormError("Something went wrong. Please try again.")
+    } finally {
+      setIsResending(false)
     }
   }
 
@@ -98,122 +145,171 @@ export default function SignUpPage() {
         </CardHeader>
         <CardContent>
           <form className="space-y-4" onSubmit={handleSubmit}>
-            <div className="space-y-2">
-              <Label htmlFor="fullName">Full Name</Label>
-              <Input
-                id="fullName"
-                placeholder="Priya Sharma"
-                className="h-11 rounded-full border-gray-200 bg-white"
-                value={formValues.fullName}
-                onChange={(event) =>
-                  handleChange("fullName", event.target.value)
-                }
-              />
-              {fieldErrors.firstName?.length ? (
-                <p className="text-xs text-red-500">
-                  {fieldErrors.firstName[0]}
-                </p>
-              ) : null}
-            </div>
+            {step === "form" ? (
+              <>
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label htmlFor="firstName" className="text-gray-700">
+                      First Name
+                    </Label>
+                    <Input
+                      id="firstName"
+                      placeholder="Priya"
+                      className="h-11 rounded-full border-gray-200 bg-white text-gray-900 placeholder:text-gray-400"
+                      value={formValues.firstName}
+                      onChange={(event) =>
+                        handleChange("firstName", event.target.value)
+                      }
+                    />
+                    {fieldErrors.firstName?.length ? (
+                      <p className="text-xs text-red-500">
+                        {fieldErrors.firstName[0]}
+                      </p>
+                    ) : null}
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="lastName" className="text-gray-700">
+                      Last Name
+                    </Label>
+                    <Input
+                      id="lastName"
+                      placeholder="Sharma"
+                      className="h-11 rounded-full border-gray-200 bg-white text-gray-900 placeholder:text-gray-400"
+                      value={formValues.lastName}
+                      onChange={(event) =>
+                        handleChange("lastName", event.target.value)
+                      }
+                    />
+                    {fieldErrors.lastName?.length ? (
+                      <p className="text-xs text-red-500">
+                        {fieldErrors.lastName[0]}
+                      </p>
+                    ) : null}
+                  </div>
+                </div>
 
-            <div className="grid gap-4 md:grid-cols-2">
-              <div className="space-y-2">
-                <Label htmlFor="schoolName">School Name</Label>
-                <Input
-                  id="schoolName"
-                  placeholder="Veda Public School"
-                  className="h-11 rounded-full border-gray-200 bg-white"
-                  value={formValues.schoolName}
-                  onChange={(event) =>
-                    handleChange("schoolName", event.target.value)
-                  }
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="city">City</Label>
-                <Input
-                  id="city"
-                  placeholder="Bengaluru"
-                  className="h-11 rounded-full border-gray-200 bg-white"
-                  value={formValues.city}
-                  onChange={(event) => handleChange("city", event.target.value)}
-                />
-              </div>
-            </div>
+                <div className="space-y-2">
+                  <Label htmlFor="email" className="text-gray-700">
+                    Email
+                  </Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    placeholder="you@school.com"
+                    className="h-11 rounded-full border-gray-200 bg-white text-gray-900 placeholder:text-gray-400"
+                    value={formValues.email}
+                    onChange={(event) =>
+                      handleChange("email", event.target.value)
+                    }
+                  />
+                  {fieldErrors.email?.length ? (
+                    <p className="text-xs text-red-500">
+                      {fieldErrors.email[0]}
+                    </p>
+                  ) : null}
+                </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                placeholder="you@school.com"
-                className="h-11 rounded-full border-gray-200 bg-white"
-                value={formValues.email}
-                onChange={(event) => handleChange("email", event.target.value)}
-              />
-              {fieldErrors.email?.length ? (
-                <p className="text-xs text-red-500">{fieldErrors.email[0]}</p>
-              ) : null}
-            </div>
+                <div className="space-y-2">
+                  <Label htmlFor="password" className="text-gray-700">
+                    Password
+                  </Label>
+                  <div className="relative">
+                    <Input
+                      id="password"
+                      type={showPassword ? "text" : "password"}
+                      placeholder="Create a password"
+                      className="h-11 rounded-full border-gray-200 bg-white text-gray-900 placeholder:text-gray-400"
+                      value={formValues.password}
+                      onChange={(event) =>
+                        handleChange("password", event.target.value)
+                      }
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword((prev) => !prev)}
+                      className="absolute top-1/2 right-3 -translate-y-1/2 text-gray-500"
+                    >
+                      {showPassword ? (
+                        <EyeOff className="size-4" />
+                      ) : (
+                        <Eye className="size-4" />
+                      )}
+                    </button>
+                  </div>
+                  {fieldErrors.password?.length ? (
+                    <p className="text-xs text-red-500">
+                      {fieldErrors.password[0]}
+                    </p>
+                  ) : null}
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="rounded-[18px] border border-gray-200 bg-[#f7f7f7] px-4 py-3 text-sm text-gray-600">
+                  We sent a 6-digit code to <strong>{formValues.email}</strong>.
+                </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
-              <div className="relative">
-                <Input
-                  id="password"
-                  type={showPassword ? "text" : "password"}
-                  placeholder="Create a password"
-                  className="h-11 rounded-full border-gray-200 bg-white"
-                  value={formValues.password}
-                  onChange={(event) =>
-                    handleChange("password", event.target.value)
-                  }
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword((prev) => !prev)}
-                  className="absolute top-1/2 right-3 -translate-y-1/2 text-muted-foreground"
-                >
-                  {showPassword ? (
-                    <EyeOff className="size-4" />
-                  ) : (
-                    <Eye className="size-4" />
-                  )}
-                </button>
-              </div>
-              {fieldErrors.password?.length ? (
-                <p className="text-xs text-red-500">
-                  {fieldErrors.password[0]}
-                </p>
-              ) : null}
-            </div>
+                <div className="space-y-2">
+                  <Label htmlFor="email" className="text-gray-700">
+                    Email
+                  </Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    placeholder="you@school.com"
+                    className="h-11 rounded-full border-gray-200 bg-white text-gray-900 placeholder:text-gray-400"
+                    value={formValues.email}
+                    onChange={(event) =>
+                      handleChange("email", event.target.value)
+                    }
+                  />
+                  {fieldErrors.email?.length ? (
+                    <p className="text-xs text-red-500">
+                      {fieldErrors.email[0]}
+                    </p>
+                  ) : null}
+                </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="confirmPassword">Confirm Password</Label>
-              <div className="relative">
-                <Input
-                  id="confirmPassword"
-                  type={showConfirmPassword ? "text" : "password"}
-                  placeholder="Confirm your password"
-                  className="h-11 rounded-full border-gray-200 bg-white"
-                  value={formValues.confirmPassword}
-                  onChange={(event) =>
-                    handleChange("confirmPassword", event.target.value)
-                  }
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowConfirmPassword((prev) => !prev)}
-                  className="absolute top-1/2 right-3 -translate-y-1/2 text-muted-foreground"
-                >
-                  {showConfirmPassword ? (
-                    <EyeOff className="size-4" />
-                  ) : (
-                    <Eye className="size-4" />
-                  )}
-                </button>
-              </div>
-            </div>
+                <div className="space-y-2">
+                  <Label htmlFor="verificationCode" className="text-gray-700">
+                    Verification Code
+                  </Label>
+                  <Input
+                    id="verificationCode"
+                    inputMode="numeric"
+                    placeholder="123456"
+                    className="h-11 rounded-full border-gray-200 bg-white text-gray-900 placeholder:text-gray-400"
+                    value={verificationCode}
+                    onChange={(event) =>
+                      setVerificationCode(event.target.value.replace(/\s/g, ""))
+                    }
+                  />
+                  {fieldErrors.code?.length ? (
+                    <p className="text-xs text-red-500">
+                      {fieldErrors.code[0]}
+                    </p>
+                  ) : null}
+                </div>
+
+                <div className="flex items-center justify-between text-sm text-gray-500">
+                  <button
+                    type="button"
+                    className="font-medium text-[#111111]"
+                    onClick={handleResend}
+                    disabled={isResending}
+                  >
+                    {isResending ? "Sending..." : "Resend code"}
+                  </button>
+                  <button
+                    type="button"
+                    className="font-medium text-[#111111]"
+                    onClick={() => setStep("form")}
+                  >
+                    Edit details
+                  </button>
+                </div>
+              </>
+            )}
 
             {formError ? (
               <p className="rounded-lg bg-red-50 px-3 py-2 text-xs text-red-600">
@@ -226,7 +322,13 @@ export default function SignUpPage() {
               className="w-full rounded-full border border-orange-400 bg-[#111111] text-white shadow-[0_12px_26px_rgba(0,0,0,0.18)] hover:bg-[#1a1a1a]"
               disabled={isLoading}
             >
-              {isLoading ? "Creating Account..." : "Create Account"}
+              {isLoading
+                ? step === "form"
+                  ? "Sending Code..."
+                  : "Verifying..."
+                : step === "form"
+                  ? "Send Verification Code"
+                  : "Verify Email"}
             </Button>
           </form>
 

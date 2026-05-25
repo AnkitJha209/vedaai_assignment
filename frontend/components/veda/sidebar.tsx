@@ -15,6 +15,7 @@ import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { VedaLogo } from "@/components/veda/logo"
+import { useAuthStore } from "@/lib/auth-store"
 
 const navItems = [
   { label: "Home", href: "/", icon: Home },
@@ -26,6 +27,20 @@ const navItems = [
 
 export function Sidebar() {
   const pathname = usePathname()
+  const user = useAuthStore((state) => state.user)
+  const status = useAuthStore((state) => state.status)
+  const displayName = user
+    ? `${user.firstName} ${user.lastName}`.trim()
+    : status === "loading"
+      ? "Loading..."
+      : "Not signed in"
+  const email = user?.email ?? ""
+  const initials = displayName
+    .split(" ")
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase())
+    .join("")
 
   return (
     <aside className="hidden md:fixed md:top-4 md:bottom-4 md:left-4 md:z-40 md:flex md:w-[220px] md:flex-col md:rounded-[28px] md:border md:border-gray-200 md:bg-white md:shadow-[0_18px_45px_rgba(0,0,0,0.08)]">
@@ -80,13 +95,11 @@ export function Sidebar() {
 
         <div className="space-y-2 rounded-2xl bg-[#f6f6f6] p-3">
           <Avatar className="size-10 rounded-full ring-2 ring-white">
-            <AvatarFallback>VS</AvatarFallback>
+            <AvatarFallback>{initials || "U"}</AvatarFallback>
           </Avatar>
           <div>
-            <p className="text-sm font-semibold text-gray-900">
-              Veda Public School
-            </p>
-            <p className="text-xs text-gray-500">Bengaluru, IN</p>
+            <p className="text-sm font-semibold text-gray-900">{displayName}</p>
+            {email ? <p className="text-xs text-gray-500">{email}</p> : null}
           </div>
         </div>
       </div>

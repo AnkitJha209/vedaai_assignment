@@ -217,6 +217,26 @@ const startWorker = async () => {
             await Assignment.findByIdAndUpdate(job.data.assignmentId, {
                 status: "failed",
             });
+
+            const assignment = await Assignment.findById(
+                job.data.assignmentId,
+            ).select("ownerId title");
+
+            if (assignment?.ownerId) {
+                const user = await User.findById(assignment.ownerId).select(
+                    "email firstName lastName",
+                );
+
+                if (user?.email) {
+                    await emailQueue.add("assignment-failed", {
+                        to: user.email,
+                        assignmentTitle: assignment.title,
+                        userName: `${user.firstName} ${user.lastName}`.trim(),
+                        assignmentId: job.data.assignmentId,
+                        failureReason: error?.message?.slice(0, 200),
+                    });
+                }
+            }
         }
         console.error("Assignment job failed", error);
     });

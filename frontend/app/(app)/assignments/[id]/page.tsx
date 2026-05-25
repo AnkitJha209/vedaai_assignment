@@ -18,6 +18,8 @@ type Assignment = {
   totalMarks: number
   difficulty: string
   additionalInstructions?: string
+  sourcePdfUrl?: string
+  sourcePdfName?: string
   status: string
   createdAt: string
 }
@@ -219,6 +221,33 @@ export default function AssignmentDetailPage() {
                   {assignment.additionalInstructions ||
                     "No additional instructions provided."}
                 </p>
+              </div>
+
+              <div className="mt-4 rounded-2xl border border-gray-200 bg-[#f7f7f7] px-4 py-4 text-sm text-gray-700">
+                <div className="text-xs font-semibold tracking-[0.16em] text-gray-500 uppercase">
+                  Attached PDF
+                </div>
+                {assignment.sourcePdfUrl ? (
+                  <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
+                    <span className="text-sm text-gray-700">
+                      {assignment.sourcePdfName || "Source PDF"}
+                    </span>
+                    <a
+                      href={assignment.sourcePdfUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      <Button
+                        variant="outline"
+                        className="h-9 rounded-full border-gray-300 px-4 text-sm"
+                      >
+                        Open PDF
+                      </Button>
+                    </a>
+                  </div>
+                ) : (
+                  <p className="mt-2 text-sm text-gray-500">No PDF attached.</p>
+                )}
               </div>
             </CardContent>
           </Card>

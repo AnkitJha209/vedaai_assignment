@@ -2,7 +2,7 @@ import { NextResponse } from "next/server"
 import { cookies } from "next/headers"
 
 export function getBackendUrl() {
-  return process.env.BACKEND_URL || process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api"
+  return process.env.BACKEND_URL || process.env.NEXT_PUBLIC_API_URL
 }
 
 export async function buildAuthHeaders() {

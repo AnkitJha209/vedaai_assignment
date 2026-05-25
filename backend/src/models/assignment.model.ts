@@ -96,6 +96,19 @@ const assignmentSchema = new Schema(
             type: String,
             default: undefined,
         },
+        sourcePdfUrl: {
+            type: String,
+            default: undefined,
+        },
+        sourcePdfKey: {
+            type: String,
+            default: undefined,
+        },
+        sourcePdfName: {
+            type: String,
+            default: undefined,
+            trim: true,
+        },
         status: {
             type: String,
             required: true,
